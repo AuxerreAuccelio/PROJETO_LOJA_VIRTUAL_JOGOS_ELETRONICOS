@@ -18,9 +18,9 @@ _ RF01. Sobre os filtros: Sim! Eu imagino que o cliente possa filtrar por vária
 
 "A loja já vende alguns desses produtos ? Se sim, de que maneira ?"
 _ RF02. Sobre vendas atuais: Sim, hoje a gente vende de forma bem manual — recebo pedidos pelo WhatsApp e Instagram, o cliente me manda mensagem perguntando se tenho o jogo, eu confirmo o preço e a forma de pagamento (Pix, geralmente), e depois combino a entrega ou envio o código digital por e-mail. É bem trabalhoso e não tem controle de estoque automatizado, às vezes vendo o mesmo jogo pra duas pessoas sem perceber que só tinha um.
+O sistema deve controlar estoque em tempo real para evitar venda de itens indisponíveis!
 
 
-"o sistema deve controlar estoque em tempo real para evitar venda de itens indisponíveis?"
 
 "Precisa criar login?"
 _ RF03. Sim, precisa. Eu quero que o cliente crie uma conta com nome, e-mail e senha, porque preciso guardar o histórico de compras dele (principalmente pra jogos digitais, caso ele perca o código e precise que eu reenvie). Mas seria legal também ter a opção de login com Google, pra facilitar — muita gente desiste de comprar quando tem que preencher cadastro longo.
@@ -70,6 +70,30 @@ _ RNF06. Olha, eu entendo que nenhum sistema fica 100% do tempo no ar, mas o ide
 
 Documento gerado a partir de entrevista de levantamento de requisitos. Última atualização: [17/09/2026].
 
+
+
+
+
+
+
+
+3. Metodologia Ágil — Kanban
+
+Acompanhamento do desenvolvimento via Kanban, com fluxo contínuo e WIP (Work In Progress) limitado — adequado para desenvolvimento solo, sem ciclos fechados (sprints).
+
+3.1 Board
+
+Colunas: Backlog → A Fazer → Em Progresso (WIP máx. 2-3) → Em Revisão/Teste → Concluído
+
+3.2 Backlog inicial 
+Coluna	Card	Origem
+Em Revisão Levantamento de Requisitos Entregáveis do Projeto
+Backlog	Criar Modelo Conceitual (DER) Entregáveis do Projeto
+Backlog	Criar Modelo Lógico (RELACIONAL) Entregáveis do Projeto
+Backlog	Criar Modelo Físico (DDL - SQL) do Banco de Dados Entregáveis do Projeto
+
+
+Documento gerado a partir de entrevista de levantamento de requisitos. Última atualização: [22/09/2026].
 
 
 
