@@ -97,3 +97,25 @@ Documento gerado a partir de entrevista de levantamento de requisitos. Última a
 
 
 
+Pronto! O diagrama está publicado com notação de Chen: retângulos para entidades, elipses para atributos (sublinhados = chave primária) e losangos para relacionamentos.
+
+
+CLIENTE (RF03 — login/cadastro)
+ADMINISTRADOR (RF05 — tipos de usuário)
+JOGO (RF01/RF02 — filtros e catálogo, com atributo tipo para digital×físico e estoque por causa do RF02 — controle em tempo real)
+PEDIDO (RF06 — processo de compra)
+PAGAMENTO (RF06/RNF03 — Pix, cartão, boleto, sem guardar dado de cartão)
+ENTREGA (RF06 — só para produtos físicos)
+CUPOM (RF06 — desconto/promoções)
+
+Relacionamentos:
+
+CLIENTE (1,N) REALIZA PEDIDO — RF06
+CLIENTE (N,N) AVALIA JOGO, com atributos próprios (nota, comentario) — RF04
+ADMINISTRADOR (1,N) GERENCIA JOGO — RF05
+PEDIDO (N,N) CONTÉM JOGO, com quantidade e preco_unitario — RF06
+PEDIDO (1,1) PAGA / (0,1) ENTREGA-SE / (0,1) APLICA CUPOM
+
+Os RNFs (performance, LGPD, mobile-first, disponibilidade) não geram entidades — são requisitos de infraestrutura/arquitetura, não de dados — então não aparecem no MER, mas influenciam decisões como "não armazenar dado de cartão" (por isso PAGAMENTO guarda só status/valor, não dados sensíveis).
+
+![alt text](image.png)
