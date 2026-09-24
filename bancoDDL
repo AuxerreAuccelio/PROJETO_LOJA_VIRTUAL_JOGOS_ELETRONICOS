@@ -1,0 +1,151 @@
+-- Loja jogos ddl sqlite · SQL --
+-- ============================================================
+-- DDL — Loja Virtual de Jogos Eletrônicos
+-- Adaptado para SQLite (para uso no DBeaver).
+--
+-- Principais diferenças em relação à versão PostgreSQL anterior:
+--   1) SERIAL não existe em SQLite → troquei por
+--      INTEGER PRIMARY KEY AUTOINCREMENT (só funciona em coluna
+--      que seja EXATAMENTE do tipo INTEGER e seja a PK da tabela).
+--   2) SQLite não aplica FOREIGN KEY por padrão → é preciso ligar
+--      manualmente com "PRAGMA foreign_keys = ON;" a cada conexão
+--      (no DBeaver: Editor de conexão SQLite > aba Driver
+--      properties > "foreign_keys" = true, ou rode o PRAGMA abaixo
+--      no início de cada sessão/script).
+--   3) SQLite não tem tipos rígidos (é "type affinity"), então
+--      DECIMAL/VARCHAR/TIMESTAMP continuam funcionando, mas na
+--      prática viram NUMERIC/TEXT internamente — mantive os nomes
+--      só para documentar a intenção de cada coluna.
+-- ============================================================
+ 
+PRAGMA foreign_keys = ON;
+ 
+-- ------------------------------------------------------------
+-- CLIENTE  (RF03 — cadastro/login; guarda histórico de compras)
+-- ------------------------------------------------------------
+CREATE TABLE CLIENTE (
+    id_cliente     INTEGER PRIMARY KEY AUTOINCREMENT,
+    nome           VARCHAR(150)  NOT NULL,
+    email          VARCHAR(150)  NOT NULL UNIQUE,   -- RF03: usado no login, não pode repetir
+    senha          VARCHAR(255)  NOT NULL,           -- guardar sempre com hash (bcrypt/argon2), nunca em texto puro
+    login_google   VARCHAR(150)  UNIQUE              -- RF03: login social opcional; permite NULL p/ quem não usa
+);
+ 
+-- ------------------------------------------------------------
+-- ADMINISTRADOR  (RF05 — perfil que cadastra produtos e vê relatórios)
+-- ------------------------------------------------------------
+CREATE TABLE ADMINISTRADOR (
+    id_admin       INTEGER PRIMARY KEY AUTOINCREMENT,
+    nome           VARCHAR(150)  NOT NULL,
+    email          VARCHAR(150)  NOT NULL UNIQUE,
+    senha          VARCHAR(255)  NOT NULL
+);
+ 
+-- ------------------------------------------------------------
+-- CUPOM  (RF06 — "talvez aplique um cupom de desconto")
+-- ------------------------------------------------------------
+CREATE TABLE CUPOM (
+    id_cupom       INTEGER PRIMARY KEY AUTOINCREMENT,
+    codigo         VARCHAR(30)   NOT NULL UNIQUE,    -- ex.: "BLACKFRIDAY10"
+    desconto       DECIMAL(5,2)  NOT NULL CHECK (desconto > 0 AND desconto <= 100), -- percentual
+    validade       DATE          NOT NULL
+);
+ 
+-- ------------------------------------------------------------
+-- JOGO  (RF01 — filtros; RF02 — estoque em tempo real)
+-- 1:N com ADMINISTRADOR → FK id_admin fica no lado "N" (JOGO)
+-- ------------------------------------------------------------
+CREATE TABLE JOGO (
+    id_jogo        INTEGER PRIMARY KEY AUTOINCREMENT,
+    id_admin       INTEGER       NOT NULL REFERENCES ADMINISTRADOR(id_admin),
+    nome           VARCHAR(200)  NOT NULL,
+    plataforma     VARCHAR(50)   NOT NULL,           -- RF01: PS5, Xbox, Switch, PC...
+    genero         VARCHAR(50),                      -- RF01: ação, RPG, esporte...
+    preco          DECIMAL(10,2) NOT NULL CHECK (preco >= 0),
+    tipo           VARCHAR(10)   NOT NULL CHECK (tipo IN ('digital', 'fisico')), -- RF06: define o fluxo pós-pagamento
+    estoque        INTEGER       NOT NULL DEFAULT 0 CHECK (estoque >= 0)          -- RF02: controle em tempo real, nunca negativo
+);
+ 
+-- ------------------------------------------------------------
+-- PEDIDO  (RF06 — processo de compra)
+-- 1:N com CLIENTE → FK id_cliente fica no lado "N" (PEDIDO)
+-- N:1 opcional com CUPOM → FK id_cupom nullable em PEDIDO
+-- ------------------------------------------------------------
+CREATE TABLE PEDIDO (
+    id_pedido      INTEGER PRIMARY KEY AUTOINCREMENT,
+    id_cliente     INTEGER       NOT NULL REFERENCES CLIENTE(id_cliente),
+    id_cupom       INTEGER       REFERENCES CUPOM(id_cupom),               -- opcional: nem todo pedido usa cupom
+    data_pedido    TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    status         VARCHAR(30)   NOT NULL DEFAULT 'aguardando_pagamento'
+                    CHECK (status IN ('aguardando_pagamento','pago','enviado','entregue','cancelado')),
+    valor_total    DECIMAL(10,2) NOT NULL CHECK (valor_total >= 0)
+);
+ 
+-- ------------------------------------------------------------
+-- ITEM_PEDIDO  (tabela associativa do N:N PEDIDO×JOGO = "CONTÉM")
+-- Guarda quantidade e preco_unitario "congelado" no momento da
+-- compra, para não mudar o histórico se o preço do jogo mudar.
+-- PK composta: a combinação pedido+jogo já é naturalmente única.
+-- ------------------------------------------------------------
+CREATE TABLE ITEM_PEDIDO (
+    id_pedido      INTEGER       NOT NULL REFERENCES PEDIDO(id_pedido),
+    id_jogo        INTEGER       NOT NULL REFERENCES JOGO(id_jogo),
+    quantidade     INTEGER       NOT NULL CHECK (quantidade > 0),
+    preco_unitario DECIMAL(10,2) NOT NULL CHECK (preco_unitario >= 0),
+    PRIMARY KEY (id_pedido, id_jogo)
+);
+ 
+-- ------------------------------------------------------------
+-- AVALIACAO  (tabela associativa do N:N CLIENTE×JOGO = "AVALIA")
+-- RF04 — "quem comprou pode avaliar o jogo com nota e texto"
+-- UNIQUE(id_cliente, id_jogo): impede o mesmo cliente avaliar o
+-- mesmo jogo duas vezes (ajuste conforme a regra real da loja).
+-- ------------------------------------------------------------
+CREATE TABLE AVALIACAO (
+    id_avaliacao   INTEGER PRIMARY KEY AUTOINCREMENT,
+    id_cliente     INTEGER       NOT NULL REFERENCES CLIENTE(id_cliente),
+    id_jogo        INTEGER       NOT NULL REFERENCES JOGO(id_jogo),
+    nota           SMALLINT      NOT NULL CHECK (nota BETWEEN 1 AND 5),
+    comentario     TEXT,
+    data_avaliacao TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE (id_cliente, id_jogo)
+);
+ 
+-- ------------------------------------------------------------
+-- PAGAMENTO  (RF06/RNF03 — Pix, cartão, boleto; sem guardar dado
+-- de cartão, só o resultado do intermediário: Mercado Pago, Stripe...)
+-- 1:1 com PEDIDO → FK id_pedido fica no lado "dependente" (PAGAMENTO)
+-- UNIQUE(id_pedido) garante que não existam 2 pagamentos p/ 1 pedido.
+-- ------------------------------------------------------------
+CREATE TABLE PAGAMENTO (
+    id_pagamento     INTEGER PRIMARY KEY AUTOINCREMENT,
+    id_pedido        INTEGER       NOT NULL UNIQUE REFERENCES PEDIDO(id_pedido),
+    forma_pagamento  VARCHAR(20)   NOT NULL CHECK (forma_pagamento IN ('pix','cartao_credito','boleto')),
+    valor            DECIMAL(10,2) NOT NULL CHECK (valor >= 0),
+    status_pagamento VARCHAR(20)   NOT NULL DEFAULT 'pendente'
+                      CHECK (status_pagamento IN ('pendente','aprovado','recusado','estornado')),
+    intermediario    VARCHAR(50)   NOT NULL   -- RNF03: nome do gateway (Mercado Pago, Stripe, PagSeguro...)
+);
+ 
+-- ------------------------------------------------------------
+-- ENTREGA  (RF06 — só existe para produto físico)
+-- 1:1 opcional com PEDIDO → não cria linha para pedido 100% digital
+-- UNIQUE(id_pedido) garante que não existam 2 entregas p/ 1 pedido.
+-- ------------------------------------------------------------
+CREATE TABLE ENTREGA (
+    id_entrega       INTEGER PRIMARY KEY AUTOINCREMENT,
+    id_pedido        INTEGER       NOT NULL UNIQUE REFERENCES PEDIDO(id_pedido),
+    codigo_rastreio  VARCHAR(50),
+    transportadora   VARCHAR(100),
+    status_envio     VARCHAR(30)   NOT NULL DEFAULT 'preparando'
+                      CHECK (status_envio IN ('preparando','enviado','em_transito','entregue'))
+);
+ 
+-- ------------------------------------------------------------
+-- Índices auxiliares (performance — RNF02: picos de acesso em
+-- Black Friday / lançamentos)
+-- ------------------------------------------------------------
+CREATE INDEX idx_jogo_plataforma  ON JOGO(plataforma);   -- RF01: filtro por plataforma
+CREATE INDEX idx_jogo_genero      ON JOGO(genero);       -- RF01: filtro por gênero
+CREATE INDEX idx_pedido_cliente   ON PEDIDO(id_cliente); -- RF04: "histórico de compras"
+CREATE INDEX idx_avaliacao_jogo   ON AVALIACAO(id_jogo); -- RF04: listar avaliações de um jogo

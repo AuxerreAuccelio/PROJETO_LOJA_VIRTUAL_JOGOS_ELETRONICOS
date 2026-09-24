@@ -88,8 +88,8 @@ Colunas: Backlog → A Fazer → Em Progresso (WIP máx. 2-3) → Em Revisão/Te
 3.2 Backlog inicial 
 Coluna	Card	Origem
 Em Revisão Levantamento de Requisitos Entregáveis do Projeto
-Backlog	Criar Modelo Conceitual (DER) Entregáveis do Projeto
-Backlog	Criar Modelo Lógico (RELACIONAL) Entregáveis do Projeto
+Em Revisão	Criar Modelo Conceitual (DER) Entregáveis do Projeto
+Em Progresso	Criar Modelo Lógico (RELACIONAL) Entregáveis do Projeto
 Backlog	Criar Modelo Físico (DDL - SQL) do Banco de Dados Entregáveis do Projeto
 
 
@@ -118,4 +118,3 @@ PEDIDO (1,1) PAGA / (0,1) ENTREGA-SE / (0,1) APLICA CUPOM
 
 Os RNFs (performance, LGPD, mobile-first, disponibilidade) não geram entidades — são requisitos de infraestrutura/arquitetura, não de dados — então não aparecem no MER, mas influenciam decisões como "não armazenar dado de cartão" (por isso PAGAMENTO guarda só status/valor, não dados sensíveis).
 
-![alt text](image.png)
