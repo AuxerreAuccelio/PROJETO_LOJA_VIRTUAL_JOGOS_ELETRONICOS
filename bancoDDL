@@ -1,92 +1,111 @@
--- Loja jogos ddl sqlite · SQL --
 -- ============================================================
--- DDL — Loja Virtual de Jogos Eletrônicos
--- Adaptado para SQLite (para uso no DBeaver).
+-- DDL ÚNICO (PONTO DE PARTIDA V2) — Loja Virtual de Jogos Eletrônicos
+-- Banco de Dados: SQLite (compatível com DBeaver e sqlite3 CLI)
 --
--- Principais diferenças em relação à versão PostgreSQL anterior:
---   1) SERIAL não existe em SQLite → troquei por
---      INTEGER PRIMARY KEY AUTOINCREMENT (só funciona em coluna
---      que seja EXATAMENTE do tipo INTEGER e seja a PK da tabela).
---   2) SQLite não aplica FOREIGN KEY por padrão → é preciso ligar
---      manualmente com "PRAGMA foreign_keys = ON;" a cada conexão
---      (no DBeaver: Editor de conexão SQLite > aba Driver
---      properties > "foreign_keys" = true, ou rode o PRAGMA abaixo
---      no início de cada sessão/script).
---   3) SQLite não tem tipos rígidos (é "type affinity"), então
---      DECIMAL/VARCHAR/TIMESTAMP continuam funcionando, mas na
---      prática viram NUMERIC/TEXT internamente — mantive os nomes
---      só para documentar a intenção de cada coluna.
+-- Observação: Executa a criação completa do esquema do banco de dados 
+-- com tabelas, chaves estrangeiras, índices e triggers de validação.
 -- ============================================================
- 
+
 PRAGMA foreign_keys = ON;
- 
+
 -- ------------------------------------------------------------
--- CLIENTE  (RF03 — cadastro/login; guarda histórico de compras)
+-- 1. CLIENTE (RF03)
+-- Permite login por senha ou Google (ao menos um obrigatório).
+-- Trata e-mail de forma insensível a maiúsculas (COLLATE NOCASE) e grava LGPD.
 -- ------------------------------------------------------------
 CREATE TABLE CLIENTE (
-    id_cliente     INTEGER PRIMARY KEY AUTOINCREMENT,
-    nome           VARCHAR(150)  NOT NULL,
-    email          VARCHAR(150)  NOT NULL UNIQUE,   -- RF03: usado no login, não pode repetir
-    senha          VARCHAR(255)  NOT NULL,           -- guardar sempre com hash (bcrypt/argon2), nunca em texto puro
-    login_google   VARCHAR(150)  UNIQUE              -- RF03: login social opcional; permite NULL p/ quem não usa
+    id_cliente            INTEGER PRIMARY KEY AUTOINCREMENT,
+    nome                  VARCHAR(150) NOT NULL,
+    email                 VARCHAR(150) NOT NULL UNIQUE COLLATE NOCASE,
+    senha                 VARCHAR(255),                      -- Hash bcrypt/argon2
+    login_google          VARCHAR(150) UNIQUE,
+    data_cadastro         TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    consentimento_lgpd_em TIMESTAMP    NOT NULL,            -- Data/hora do aceite dos termos
+    ativo                 INTEGER      NOT NULL DEFAULT 1 CHECK (ativo IN (0,1)),
+    CHECK (senha IS NOT NULL OR login_google IS NOT NULL)
 );
- 
+
 -- ------------------------------------------------------------
--- ADMINISTRADOR  (RF05 — perfil que cadastra produtos e vê relatórios)
+-- 2. ADMINISTRADOR (RF05)
 -- ------------------------------------------------------------
 CREATE TABLE ADMINISTRADOR (
     id_admin       INTEGER PRIMARY KEY AUTOINCREMENT,
-    nome           VARCHAR(150)  NOT NULL,
-    email          VARCHAR(150)  NOT NULL UNIQUE,
-    senha          VARCHAR(255)  NOT NULL
+    nome           VARCHAR(150) NOT NULL,
+    email          VARCHAR(150) NOT NULL UNIQUE COLLATE NOCASE,
+    senha          VARCHAR(255) NOT NULL,
+    ativo          INTEGER      NOT NULL DEFAULT 1 CHECK (ativo IN (0,1))
 );
- 
+
 -- ------------------------------------------------------------
--- CUPOM  (RF06 — "talvez aplique um cupom de desconto")
+-- 3. ENDERECO (RF06 — Cadastro para entregas de produto físico)
+-- ------------------------------------------------------------
+CREATE TABLE ENDERECO (
+    id_endereco    INTEGER PRIMARY KEY AUTOINCREMENT,
+    id_cliente     INTEGER      NOT NULL REFERENCES CLIENTE(id_cliente),
+    apelido        VARCHAR(50),                               -- Ex: "Casa", "Trabalho"
+    destinatario   VARCHAR(150) NOT NULL,
+    cep            CHAR(8)      NOT NULL CHECK (length(cep) = 8 AND cep NOT GLOB '*[^0-9]*'),
+    logradouro     VARCHAR(200) NOT NULL,
+    numero         VARCHAR(20)  NOT NULL,
+    complemento    VARCHAR(100),
+    bairro         VARCHAR(100) NOT NULL,
+    cidade         VARCHAR(100) NOT NULL,
+    uf             CHAR(2)      NOT NULL CHECK (length(uf) = 2),
+    padrao         INTEGER      NOT NULL DEFAULT 0 CHECK (padrao IN (0,1)),
+    ativo          INTEGER      NOT NULL DEFAULT 1 CHECK (ativo IN (0,1))
+);
+
+-- ------------------------------------------------------------
+-- 4. CUPOM (RF06 — Cupons de desconto)
 -- ------------------------------------------------------------
 CREATE TABLE CUPOM (
     id_cupom       INTEGER PRIMARY KEY AUTOINCREMENT,
-    codigo         VARCHAR(30)   NOT NULL UNIQUE,    -- ex.: "BLACKFRIDAY10"
-    desconto       DECIMAL(5,2)  NOT NULL CHECK (desconto > 0 AND desconto <= 100), -- percentual
+    codigo         VARCHAR(30)   NOT NULL UNIQUE,
+    desconto       DECIMAL(5,2)  NOT NULL CHECK (desconto > 0 AND desconto <= 100),
     validade       DATE          NOT NULL
 );
- 
+
 -- ------------------------------------------------------------
--- JOGO  (RF01 — filtros; RF02 — estoque em tempo real)
--- 1:N com ADMINISTRADOR → FK id_admin fica no lado "N" (JOGO)
+-- 5. JOGO e JOGO_IMAGEM (RF01, RF02, RF04)
+-- Estoque: físico = mantido pela API; digital = automático via triggers.
 -- ------------------------------------------------------------
 CREATE TABLE JOGO (
-    id_jogo        INTEGER PRIMARY KEY AUTOINCREMENT,
-    id_admin       INTEGER       NOT NULL REFERENCES ADMINISTRADOR(id_admin),
-    nome           VARCHAR(200)  NOT NULL,
-    plataforma     VARCHAR(50)   NOT NULL,           -- RF01: PS5, Xbox, Switch, PC...
-    genero         VARCHAR(50),                      -- RF01: ação, RPG, esporte...
-    preco          DECIMAL(10,2) NOT NULL CHECK (preco >= 0),
-    tipo           VARCHAR(10)   NOT NULL CHECK (tipo IN ('digital', 'fisico')), -- RF06: define o fluxo pós-pagamento
-    estoque        INTEGER       NOT NULL DEFAULT 0 CHECK (estoque >= 0)          -- RF02: controle em tempo real, nunca negativo
+    id_jogo            INTEGER PRIMARY KEY AUTOINCREMENT,
+    id_admin           INTEGER       NOT NULL REFERENCES ADMINISTRADOR(id_admin),
+    nome               VARCHAR(200)  NOT NULL,
+    plataforma         VARCHAR(50)   NOT NULL,
+    genero             VARCHAR(50),
+    preco              DECIMAL(10,2) NOT NULL CHECK (preco >= 0),
+    tipo               VARCHAR(10)   NOT NULL CHECK (tipo IN ('digital', 'fisico')),
+    estoque            INTEGER       NOT NULL DEFAULT 0 CHECK (estoque >= 0),
+    desenvolvedora     VARCHAR(100),
+    descricao          TEXT,
+    requisitos_sistema TEXT,
+    data_lancamento    DATE,
+    ativo              INTEGER       NOT NULL DEFAULT 1 CHECK (ativo IN (0,1))
 );
- 
+
+CREATE TABLE JOGO_IMAGEM (
+    id_imagem      INTEGER PRIMARY KEY AUTOINCREMENT,
+    id_jogo        INTEGER       NOT NULL REFERENCES JOGO(id_jogo) ON DELETE CASCADE,
+    url            VARCHAR(500)  NOT NULL,
+    ordem          INTEGER       NOT NULL DEFAULT 0,
+    principal      INTEGER       NOT NULL DEFAULT 0 CHECK (principal IN (0,1))
+);
+
 -- ------------------------------------------------------------
--- PEDIDO  (RF06 — processo de compra)
--- 1:N com CLIENTE → FK id_cliente fica no lado "N" (PEDIDO)
--- N:1 opcional com CUPOM → FK id_cupom nullable em PEDIDO
+-- 6. PEDIDO e ITEM_PEDIDO (RF06)
 -- ------------------------------------------------------------
 CREATE TABLE PEDIDO (
     id_pedido      INTEGER PRIMARY KEY AUTOINCREMENT,
     id_cliente     INTEGER       NOT NULL REFERENCES CLIENTE(id_cliente),
-    id_cupom       INTEGER       REFERENCES CUPOM(id_cupom),               -- opcional: nem todo pedido usa cupom
+    id_cupom       INTEGER       REFERENCES CUPOM(id_cupom),
     data_pedido    TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP,
     status         VARCHAR(30)   NOT NULL DEFAULT 'aguardando_pagamento'
                     CHECK (status IN ('aguardando_pagamento','pago','enviado','entregue','cancelado')),
     valor_total    DECIMAL(10,2) NOT NULL CHECK (valor_total >= 0)
 );
- 
--- ------------------------------------------------------------
--- ITEM_PEDIDO  (tabela associativa do N:N PEDIDO×JOGO = "CONTÉM")
--- Guarda quantidade e preco_unitario "congelado" no momento da
--- compra, para não mudar o histórico se o preço do jogo mudar.
--- PK composta: a combinação pedido+jogo já é naturalmente única.
--- ------------------------------------------------------------
+
 CREATE TABLE ITEM_PEDIDO (
     id_pedido      INTEGER       NOT NULL REFERENCES PEDIDO(id_pedido),
     id_jogo        INTEGER       NOT NULL REFERENCES JOGO(id_jogo),
@@ -94,12 +113,28 @@ CREATE TABLE ITEM_PEDIDO (
     preco_unitario DECIMAL(10,2) NOT NULL CHECK (preco_unitario >= 0),
     PRIMARY KEY (id_pedido, id_jogo)
 );
- 
+
 -- ------------------------------------------------------------
--- AVALIACAO  (tabela associativa do N:N CLIENTE×JOGO = "AVALIA")
--- RF04 — "quem comprou pode avaliar o jogo com nota e texto"
--- UNIQUE(id_cliente, id_jogo): impede o mesmo cliente avaliar o
--- mesmo jogo duas vezes (ajuste conforme a regra real da loja).
+-- 7. CODIGO_ATIVACAO (RF03/RF06 — Chaves para jogos digitais)
+-- ------------------------------------------------------------
+CREATE TABLE CODIGO_ATIVACAO (
+    id_codigo      INTEGER PRIMARY KEY AUTOINCREMENT,
+    id_jogo        INTEGER       NOT NULL REFERENCES JOGO(id_jogo),
+    codigo         VARCHAR(255)  NOT NULL,
+    status         VARCHAR(12)   NOT NULL DEFAULT 'disponivel'
+                    CHECK (status IN ('disponivel','reservado','entregue','invalido')),
+    id_pedido      INTEGER       REFERENCES PEDIDO(id_pedido),
+    data_entrega   TIMESTAMP,
+    UNIQUE (id_jogo, codigo),
+    CHECK (
+           (status = 'disponivel' AND id_pedido IS NULL)
+        OR (status IN ('reservado','entregue') AND id_pedido IS NOT NULL)
+        OR  status = 'invalido'
+    )
+);
+
+-- ------------------------------------------------------------
+-- 8. AVALIACAO (RF04)
 -- ------------------------------------------------------------
 CREATE TABLE AVALIACAO (
     id_avaliacao   INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -110,42 +145,185 @@ CREATE TABLE AVALIACAO (
     data_avaliacao TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP,
     UNIQUE (id_cliente, id_jogo)
 );
- 
+
 -- ------------------------------------------------------------
--- PAGAMENTO  (RF06/RNF03 — Pix, cartão, boleto; sem guardar dado
--- de cartão, só o resultado do intermediário: Mercado Pago, Stripe...)
--- 1:1 com PEDIDO → FK id_pedido fica no lado "dependente" (PAGAMENTO)
--- UNIQUE(id_pedido) garante que não existam 2 pagamentos p/ 1 pedido.
+-- 9. PAGAMENTO (RF06 / RNF03)
+-- Relação 1:N com pedido para permitir novas tentativas em caso de erro/recusa.
 -- ------------------------------------------------------------
 CREATE TABLE PAGAMENTO (
-    id_pagamento     INTEGER PRIMARY KEY AUTOINCREMENT,
-    id_pedido        INTEGER       NOT NULL UNIQUE REFERENCES PEDIDO(id_pedido),
-    forma_pagamento  VARCHAR(20)   NOT NULL CHECK (forma_pagamento IN ('pix','cartao_credito','boleto')),
-    valor            DECIMAL(10,2) NOT NULL CHECK (valor >= 0),
-    status_pagamento VARCHAR(20)   NOT NULL DEFAULT 'pendente'
-                      CHECK (status_pagamento IN ('pendente','aprovado','recusado','estornado')),
-    intermediario    VARCHAR(50)   NOT NULL   -- RNF03: nome do gateway (Mercado Pago, Stripe, PagSeguro...)
+    id_pagamento         INTEGER PRIMARY KEY AUTOINCREMENT,
+    id_pedido            INTEGER       NOT NULL REFERENCES PEDIDO(id_pedido),
+    forma_pagamento      VARCHAR(20)   NOT NULL CHECK (forma_pagamento IN ('pix','cartao_credito','boleto')),
+    parcelas             INTEGER       NOT NULL DEFAULT 1 CHECK (parcelas BETWEEN 1 AND 12),
+    valor                DECIMAL(10,2) NOT NULL CHECK (valor >= 0),
+    status_pagamento     VARCHAR(20)   NOT NULL DEFAULT 'pendente'
+                          CHECK (status_pagamento IN ('pendente','aprovado','recusado','estornado')),
+    intermediario        VARCHAR(50)   NOT NULL,              -- Mercado Pago, Stripe, etc.
+    id_transacao_externa VARCHAR(100),                        -- ID do Gateway
+    data_criacao         TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CHECK (forma_pagamento = 'cartao_credito' OR parcelas = 1)
 );
- 
+
 -- ------------------------------------------------------------
--- ENTREGA  (RF06 — só existe para produto físico)
--- 1:1 opcional com PEDIDO → não cria linha para pedido 100% digital
--- UNIQUE(id_pedido) garante que não existam 2 entregas p/ 1 pedido.
+-- 10. ENTREGA (RF06 — Exclusivo para envios físicos)
 -- ------------------------------------------------------------
 CREATE TABLE ENTREGA (
     id_entrega       INTEGER PRIMARY KEY AUTOINCREMENT,
     id_pedido        INTEGER       NOT NULL UNIQUE REFERENCES PEDIDO(id_pedido),
+    id_endereco      INTEGER       NOT NULL REFERENCES ENDERECO(id_endereco),
     codigo_rastreio  VARCHAR(50),
     transportadora   VARCHAR(100),
+    valor_frete      DECIMAL(10,2) NOT NULL DEFAULT 0 CHECK (valor_frete >= 0),
     status_envio     VARCHAR(30)   NOT NULL DEFAULT 'preparando'
                       CHECK (status_envio IN ('preparando','enviado','em_transito','entregue'))
 );
- 
+
 -- ------------------------------------------------------------
--- Índices auxiliares (performance — RNF02: picos de acesso em
--- Black Friday / lançamentos)
+-- 11. CARRINHO_ITEM (RF04)
 -- ------------------------------------------------------------
-CREATE INDEX idx_jogo_plataforma  ON JOGO(plataforma);   -- RF01: filtro por plataforma
-CREATE INDEX idx_jogo_genero      ON JOGO(genero);       -- RF01: filtro por gênero
-CREATE INDEX idx_pedido_cliente   ON PEDIDO(id_cliente); -- RF04: "histórico de compras"
-CREATE INDEX idx_avaliacao_jogo   ON AVALIACAO(id_jogo); -- RF04: listar avaliações de um jogo
+CREATE TABLE CARRINHO_ITEM (
+    id_cliente     INTEGER       NOT NULL REFERENCES CLIENTE(id_cliente) ON DELETE CASCADE,
+    id_jogo        INTEGER       NOT NULL REFERENCES JOGO(id_jogo) ON DELETE CASCADE,
+    quantidade     INTEGER       NOT NULL CHECK (quantidade > 0),
+    data_adicao    TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (id_cliente, id_jogo)
+);
+
+-- ------------------------------------------------------------
+-- 12. CHAMADO e CHAMADO_MENSAGEM (RF04 — Suporte ao cliente)
+-- ------------------------------------------------------------
+CREATE TABLE CHAMADO (
+    id_chamado     INTEGER PRIMARY KEY AUTOINCREMENT,
+    id_cliente     INTEGER       NOT NULL REFERENCES CLIENTE(id_cliente),
+    id_pedido      INTEGER       REFERENCES PEDIDO(id_pedido),
+    assunto        VARCHAR(150)  NOT NULL,
+    status         VARCHAR(20)   NOT NULL DEFAULT 'aberto'
+                    CHECK (status IN ('aberto','em_atendimento','resolvido','fechado')),
+    data_abertura  TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE CHAMADO_MENSAGEM (
+    id_mensagem    INTEGER PRIMARY KEY AUTOINCREMENT,
+    id_chamado     INTEGER       NOT NULL REFERENCES CHAMADO(id_chamado) ON DELETE CASCADE,
+    autor          VARCHAR(10)   NOT NULL CHECK (autor IN ('cliente','admin')),
+    id_admin       INTEGER       REFERENCES ADMINISTRADOR(id_admin),
+    texto          TEXT          NOT NULL,
+    data_envio     TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CHECK (   (autor = 'admin'   AND id_admin IS NOT NULL)
+           OR (autor = 'cliente' AND id_admin IS NULL))
+);
+
+-- ============================================================
+-- ÍNDICES AUXILIARES E CHAVES ÚNICAS (Performance e Consistência)
+-- ============================================================
+
+CREATE INDEX idx_jogo_plataforma ON JOGO(plataforma);
+CREATE INDEX idx_jogo_genero     ON JOGO(genero);
+CREATE INDEX idx_jogo_preco      ON JOGO(preco);
+CREATE UNIQUE INDEX uq_jogo_produto ON JOGO(nome COLLATE NOCASE, plataforma, tipo);
+CREATE UNIQUE INDEX uq_cupom_codigo_ci ON CUPOM(codigo COLLATE NOCASE);
+
+CREATE INDEX idx_jogo_imagem_jogo ON JOGO_IMAGEM(id_jogo, ordem);
+CREATE UNIQUE INDEX uq_jogo_imagem_principal ON JOGO_IMAGEM(id_jogo) WHERE principal = 1;
+
+CREATE INDEX idx_pedido_cliente     ON PEDIDO(id_cliente);
+CREATE INDEX idx_pedido_status_data ON PEDIDO(status, data_pedido);
+CREATE INDEX idx_item_pedido_jogo   ON ITEM_PEDIDO(id_jogo);
+CREATE INDEX idx_avaliacao_jogo     ON AVALIACAO(id_jogo);
+
+CREATE INDEX idx_endereco_cliente ON ENDERECO(id_cliente);
+CREATE UNIQUE INDEX uq_endereco_padrao ON ENDERECO(id_cliente) WHERE padrao = 1;
+
+CREATE INDEX idx_codigo_jogo_status ON CODIGO_ATIVACAO(id_jogo, status);
+CREATE INDEX idx_codigo_pedido      ON CODIGO_ATIVACAO(id_pedido);
+
+CREATE UNIQUE INDEX uq_pagamento_ativo ON PAGAMENTO(id_pedido)
+    WHERE status_pagamento IN ('pendente','aprovado');
+CREATE UNIQUE INDEX uq_pagamento_transacao ON PAGAMENTO(intermediario, id_transacao_externa)
+    WHERE id_transacao_externa IS NOT NULL;
+
+CREATE INDEX idx_chamado_cliente ON CHAMADO(id_cliente);
+CREATE INDEX idx_chamado_status  ON CHAMADO(status);
+CREATE INDEX idx_chamado_msg     ON CHAMADO_MENSAGEM(id_chamado);
+
+-- ============================================================
+-- TRIGGERS (Validações de Regra de Negócio)
+-- ============================================================
+
+-- Garante que só quem comprou o jogo e teve o pedido pago/entregue pode avaliar
+CREATE TRIGGER trg_avaliacao_so_comprador
+BEFORE INSERT ON AVALIACAO
+WHEN NOT EXISTS (
+    SELECT 1 FROM PEDIDO p
+    JOIN ITEM_PEDIDO i ON i.id_pedido = p.id_pedido
+    WHERE p.id_cliente = NEW.id_cliente
+      AND i.id_jogo    = NEW.id_jogo
+      AND p.status IN ('pago','enviado','entregue')
+)
+BEGIN
+    SELECT RAISE(ABORT, 'Somente quem comprou o jogo (pedido pago) pode avaliar');
+END;
+
+-- Impede cadastrar código de ativação em jogos físicos
+CREATE TRIGGER trg_codigo_so_digital
+BEFORE INSERT ON CODIGO_ATIVACAO
+WHEN (SELECT tipo FROM JOGO WHERE id_jogo = NEW.id_jogo) <> 'digital'
+BEGIN
+    SELECT RAISE(ABORT, 'Codigo de ativacao so pode ser cadastrado para jogo digital');
+END;
+
+-- Atualiza automaticamente o estoque do jogo digital ao inserir códigos
+CREATE TRIGGER trg_codigo_estoque_ai
+AFTER INSERT ON CODIGO_ATIVACAO
+BEGIN
+    UPDATE JOGO
+       SET estoque = (SELECT COUNT(*) FROM CODIGO_ATIVACAO c
+                       WHERE c.id_jogo = JOGO.id_jogo AND c.status = 'disponivel')
+     WHERE id_jogo = NEW.id_jogo AND tipo = 'digital';
+END;
+
+-- Atualiza automaticamente o estoque do jogo digital ao alterar status do código
+CREATE TRIGGER trg_codigo_estoque_au
+AFTER UPDATE OF status, id_jogo ON CODIGO_ATIVACAO
+BEGIN
+    UPDATE JOGO
+       SET estoque = (SELECT COUNT(*) FROM CODIGO_ATIVACAO c
+                       WHERE c.id_jogo = JOGO.id_jogo AND c.status = 'disponivel')
+     WHERE id_jogo IN (OLD.id_jogo, NEW.id_jogo) AND tipo = 'digital';
+END;
+
+-- Atualiza automaticamente o estoque do jogo digital ao deletar códigos
+CREATE TRIGGER trg_codigo_estoque_ad
+AFTER DELETE ON CODIGO_ATIVACAO
+BEGIN
+    UPDATE JOGO
+       SET estoque = (SELECT COUNT(*) FROM CODIGO_ATIVACAO c
+                       WHERE c.id_jogo = JOGO.id_jogo AND c.status = 'disponivel')
+     WHERE id_jogo = OLD.id_jogo AND tipo = 'digital';
+END;
+
+-- Impede associar na entrega um endereço que pertença a outro cliente
+CREATE TRIGGER trg_entrega_endereco_do_cliente_ins
+BEFORE INSERT ON ENTREGA
+WHEN (SELECT id_cliente FROM ENDERECO WHERE id_endereco = NEW.id_endereco)
+  <> (SELECT id_cliente FROM PEDIDO   WHERE id_pedido   = NEW.id_pedido)
+BEGIN
+    SELECT RAISE(ABORT, 'O endereco de entrega nao pertence ao cliente do pedido');
+END;
+
+CREATE TRIGGER trg_entrega_endereco_do_cliente_upd
+BEFORE UPDATE OF id_endereco, id_pedido ON ENTREGA
+WHEN (SELECT id_cliente FROM ENDERECO WHERE id_endereco = NEW.id_endereco)
+  <> (SELECT id_cliente FROM PEDIDO   WHERE id_pedido   = NEW.id_pedido)
+BEGIN
+    SELECT RAISE(ABORT, 'O endereco de entrega nao pertence ao cliente do pedido');
+END;
+
+-- Protege o histórico: impede alterar dados de um endereço que já foi usado em uma entrega realizada
+CREATE TRIGGER trg_endereco_imutavel
+BEFORE UPDATE OF id_cliente, destinatario, cep, logradouro, numero,
+                 complemento, bairro, cidade, uf ON ENDERECO
+WHEN EXISTS (SELECT 1 FROM ENTREGA WHERE id_endereco = OLD.id_endereco)
+BEGIN
+    SELECT RAISE(ABORT, 'Endereco ja usado em entrega nao pode ser alterado: cadastre um novo');
+END;
