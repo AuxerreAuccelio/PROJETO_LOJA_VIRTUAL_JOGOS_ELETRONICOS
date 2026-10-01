@@ -1,0 +1,64 @@
+-- ============================================================
+-- DML — Script de Carga de Dados Inicial / Mock Data
+-- Banco de Dados: SQLite (loja.db)
+-- ============================================================
+
+PRAGMA foreign_keys = ON;
+
+-- 1. ADMINISTRADORES
+INSERT INTO ADMINISTRADOR (nome, email, senha) VALUES
+('Admin Geral', 'admin@lojadegames.com', '$2a$12$e8y.hashfalsoadmin123456');
+
+-- 2. CLIENTES
+INSERT INTO CLIENTE (nome, email, senha, consentimento_lgpd_em) VALUES
+('Carlos Silva', 'carlos@email.com', '$2a$12$e8y.hashfalsocliente123', CURRENT_TIMESTAMP),
+('Ana Souza', 'ana@email.com', '$2a$12$e8y.hashfalsocliente456', CURRENT_TIMESTAMP);
+
+-- 3. ENDEREÇOS (para cliente 1 - Carlos)
+INSERT INTO ENDERECO (id_cliente, apelido, destinatario, cep, logradouro, numero, bairro, cidade, uf, padrao) VALUES
+(1, 'Casa', 'Carlos Silva', '01001000', 'Praça da Sé', '100', 'Centro', 'São Paulo', 'SP', 1);
+
+-- 4. CUPOM DE DESCONTO
+INSERT INTO CUPOM (codigo, desconto, validade) VALUES
+('PROMO10', 10.00, '2026-12-31');
+
+-- 5. JOGOS
+-- Jogo 1: Físico (Estoque manual)
+INSERT INTO JOGO (id_admin, nome, plataforma, genero, preco, tipo, estoque, desenvolvedora, descricao) VALUES
+(1, 'Elden Ring', 'PS5', 'RPG', 299.90, 'fisico', 15, 'FromSoftware', 'RPG de ação em mundo aberto.');
+
+-- Jogo 2: Digital (Estoque 0 inicial; será atualizado via Trigger pelas chaves inseridas abaixo)
+INSERT INTO JOGO (id_admin, nome, plataforma, genero, preco, tipo, estoque, desenvolvedora, descricao) VALUES
+(1, 'Cyberpunk 2077', 'PC', 'RPG', 199.90, 'digital', 0, 'CD Projekt Red', 'RPG de ficção científica em mundo aberto.');
+
+-- Imagens dos jogos
+INSERT INTO JOGO_IMAGEM (id_jogo, url, ordem, principal) VALUES
+(1, 'https://imagem.com/elden_ring_cover.jpg', 1, 1),
+(2, 'https://imagem.com/cyberpunk_cover.jpg', 1, 1);
+
+-- 6. CÓDIGOS DE ATIVAÇÃO (Jogos Digitais)
+-- Ao inserir estes códigos, a TRIGGER do DDL atualizará automaticamente o estoque do Cyberpunk (id_jogo 2) para 2!
+INSERT INTO CODIGO_ATIVACAO (id_jogo, codigo, status) VALUES
+(2, 'CP77-XXXX-1111-AAAA', 'disponivel'),
+(2, 'CP77-XXXX-2222-BBBB', 'disponivel');
+
+-- 7. SIMULAÇÃO DE COMPRA DO JOGO 1 (Elden Ring) PELO CLIENTE 1 (Carlos)
+-- Criar o Pedido
+INSERT INTO PEDIDO (id_cliente, id_cupom, status, valor_total) VALUES
+(1, 1, 'pago', 269.91); -- Valor com 10% de desconto do cupom PROMO10
+
+-- Adicionar o Item ao Pedido
+INSERT INTO ITEM_PEDIDO (id_pedido, id_jogo, quantidade, preco_unitario) VALUES
+(1, 1, 1, 299.90);
+
+-- Registrar Pagamento
+INSERT INTO PAGAMENTO (id_pedido, forma_pagamento, parcelas, valor, status_pagamento, intermediario, id_transacao_externa) VALUES
+(1, 'cartao_credito', 2, 269.91, 'aprovado', 'MercadoPago', 'MP-TRANS-987654');
+
+-- Registrar Entrega
+INSERT INTO ENTREGA (id_pedido, id_endereco, codigo_rastreio, transportadora, valor_frete, status_envio) VALUES
+(1, 1, 'BR123456789BR', 'Correios', 15.00, 'enviado');
+
+-- 8. AVALIAÇÃO (Permitida apenas porque o Cliente 1 possui pedido 'pago' para o Jogo 1)
+INSERT INTO AVALIACAO (id_cliente, id_jogo, nota, comentario) VALUES
+(1, 1, 5, 'Excelente jogo, chegou muito rápido!');
