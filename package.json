@@ -19,7 +19,9 @@
   },
   "homepage": "https://github.com/AuxerreAuccelio/PROJETO_LOJA_VIRTUAL_JOGOS_ELETRONICOS#readme",
   "dependencies": {
-    "express": "^5.2.1"
+    "better-sqlite3": "^13.0.3",
+    "express": "^5.2.1",
+    "sqlite3": "^6.0.1"
   },
   "devDependencies": {
     "nodemon": "^3.1.14"
