@@ -1,24 +1,12 @@
-const express = require('express');
-const jogosRoutes = require('./routes/jogosRoutes');
 
-const app = express();
-const PORT = process.env.PORT || 3000;
 
-// Middleware para processar JSON
-app.use(express.json());
+              const app = require('./app');
+              const PORT = process.env.PORT || 3000;
 
-// Rota raiz de verificação
-app.get('/', (req, res) => {
-  res.json({ mensagem: "API da Loja Virtual de Jogos rodando com sucesso!" });
-});
-
-// Registrando as rotas do recurso JOGO
-app.use('/api/jogos', jogosRoutes);
-
-// Inicialização do servidor
-app.listen(PORT, () => {
-  console.log(`Servidor rodando em http://localhost:${PORT}`);
-});
+              // Inicialização do servidor
+              app.listen(PORT, () => {
+                console.log(`Servidor rodando em http://localhost:${PORT}`);
+              });
 
 
 
