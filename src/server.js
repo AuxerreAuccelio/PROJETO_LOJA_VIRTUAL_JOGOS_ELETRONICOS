@@ -97,4 +97,36 @@ curl -X POST http://localhost:3000/api/jogos \
 
 
 
+
+
+400
+curl -i -X PUT http://localhost:3000/api/jogos/3 \
+  -H "Content-Type: application/json" \
+  -d '{"preco": -5}'
+
+
+4200
+curl -i -X PUT http://localhost:3000/api/jogos/3 \
+  -H "Content-Type: application/json" \
+  -d '{}'
+
+
+
+
+200
+curl -i -X PUT http://localhost:3000/api/jogos/3 \
+  -H "Content-Type: application/json" \
+  -d '{"preco": 119.90}'
+
+
+
+
+409
+curl -i -X PUT http://localhost:3000/api/jogos/3 \
+  -H "Content-Type: application/json" \
+  -d '{"nome": "Cyberpunk 2077"}'  
+
+
+
+
   */

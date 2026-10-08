@@ -76,6 +76,14 @@ const jogosController = {
         id_jogo: result.lastInsertRowid
       });
     } catch (error) {
+
+      
+      if (error.code === 'SQLITE_CONSTRAINT_UNIQUE') {
+        return res.status(409).json({
+          mensagem: 'Já existe um jogo com esse nome, plataforma e tipo'
+        });
+      }
+
       res.status(500).json({ erro: 'Erro ao cadastrar jogo', detalhe: error.message });
     }
   },
@@ -84,18 +92,23 @@ const jogosController = {
   atualizar: (req, res) => {
     try {
       const { id } = req.params;
+      const resultado = jogoUpdateSchema.safeParse(req.body);
+
+      if (!resultado.success) {
+        return res.status(400).json({
+          mensagem: 'Dados inválidos',
+          erros: resultado.error.issues.map(i => ({ campo: i.path.join('.'), problema: i.message }))
+        });
+      }
+
+      if (Object.keys(resultado.data).length === 0) {
+        return res.status(400).json({ mensagem: 'Envie ao menos um campo para atualizar' });
+      }
+
       const {
-        nome,
-        plataforma,
-        genero,
-        preco,
-        tipo,
-        estoque,
-        desenvolvedora,
-        descricao, 
-        requisitos_sistema,
-        data_lancamento
-      } = req.body;
+        nome, plataforma, genero, preco, tipo, estoque,
+        desenvolvedora, descricao, requisitos_sistema, data_lancamento
+      } = resultado.data;
 
       const stmt = db.prepare(`
       UPDATE JOGO SET
@@ -121,6 +134,15 @@ const jogosController = {
 
       res.json({ mensagem: 'Jogo atualizado com sucesso!' });
     } catch (error) {
+
+
+      if (error.code === 'SQLITE_CONSTRAINT_UNIQUE') {
+        return res.status(409).json({
+          mensagem: 'Já existe um jogo com esse nome, plataforma e tipo'
+        });
+      }
+
+
       res.status(500).json({ erro: 'Erro ao atualizar jogo', detalhe: error.message });
     }
   },
