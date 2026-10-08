@@ -33,7 +33,7 @@ const jogosController = {
 
   // 3. Cadastrar um novo jogo
   criar: (req, res) => {
-    try {
+    
           const resultado = jogoSchema.safeParse(req.body);
 
     if (!resultado.success) {
@@ -73,17 +73,7 @@ const jogosController = {
         mensagem: 'Jogo cadastrado com sucesso!',
         id_jogo: result.lastInsertRowid
       });
-    } catch (error) {
-
-      
-      if (error.code === 'SQLITE_CONSTRAINT_UNIQUE') {
-        return res.status(409).json({
-          mensagem: 'Já existe um jogo com esse nome, plataforma e tipo'
-        });
-      }
-
-      res.status(500).json({ erro: 'Erro ao cadastrar jogo', detalhe: error.message });
-    }
+        
   },
 
   // 4. Atualizar um jogo
