@@ -2,6 +2,7 @@
 // Crie o arquivo src/controllers/jogosController.js. Aqui definiremos o CRUD do recurso JOGO:
 
 const db = require('../config/database');
+const { jogoSchema, jogoUpdateSchema } = require('../validations/jogoSchema');
 
 const jogosController = {
   // 1. Listar todos os jogos ativos
@@ -35,24 +36,19 @@ const jogosController = {
   // 3. Cadastrar um novo jogo
   criar: (req, res) => {
     try {
-      const {
-        id_admin,
-        nome,
-        plataforma,
-        genero,
-        preco,
-        tipo,
-        estoque,
-        desenvolvedora,
-        descricao,
-        requisitos_sistema,
-        data_lancamento
-      } = req.body;
+          const resultado = jogoSchema.safeParse(req.body);
 
-      // Validação simples de campos obrigatórios
-      if (!nome || !preco || !id_admin) {
-        return res.status(400).json({ mensagem: 'Campos id_admin, nome e preco são obrigatórios' });
-      }
+    if (!resultado.success) {
+      return res.status(400).json({
+        mensagem: 'Dados inválidos',
+        erros: resultado.error.issues.map(i => ({ campo: i.path.join('.'), problema: i.message }))
+      });
+    }
+
+    const {
+      id_admin, nome, plataforma, genero, preco, tipo, estoque,
+      desenvolvedora, descricao, requisitos_sistema, data_lancamento
+    } = resultado.data;
 
       const stmt = db.prepare(`
         INSERT INTO JOGO (

@@ -75,4 +75,26 @@ sqlite3 loja.db "SELECT id_jogo, nome, ativo FROM JOGO;"
 
 
 
+
+
+
+400
+curl -X POST http://localhost:3000/api/jogos \
+  -H "Content-Type: application/json" \
+  -d '{"id_admin": 1, "nome": "Teste", "plataforma": "PC", "preco": "abc"}'
+
+
+400
+curl -X POST http://localhost:3000/api/jogos \
+  -H "Content-Type: application/json" \
+  -d '{"id_admin": 1, "nome": "Teste Passo 4", "preco": 59.90}'
+
+
+201
+curl -X POST http://localhost:3000/api/jogos \
+  -H "Content-Type: application/json" \
+  -d '{"id_admin": 1, "nome": "Teste Passo 4", "plataforma": "PC", "preco": 59.90}'
+
+
+
   */
