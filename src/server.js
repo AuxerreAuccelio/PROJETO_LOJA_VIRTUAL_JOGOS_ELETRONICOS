@@ -128,5 +128,26 @@ curl -i -X PUT http://localhost:3000/api/jogos/3 \
 
 
 
+400
+curl -i http://localhost:3000/api/jogos/abc
+
+
+400
+curl -i http://localhost:3000/api/jogos/-1
+
+
+400
+curl -i http://localhost:3000/api/jogos/1.5
+
+
+
+404
+curl -i http://localhost:3000/api/jogos/9999
+
+
+200
+curl -i http://localhost:3000/api/jogos/1
+
+
 
   */
