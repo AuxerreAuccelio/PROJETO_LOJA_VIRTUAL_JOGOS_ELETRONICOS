@@ -59,4 +59,20 @@ curl -X POST http://localhost:3000/api/jogos \
 
 
 
+curl -X PUT http://localhost:3000/api/jogos/4 -H "Content-Type: application/json" -d "{\"preco\": 99.98}"
+
+curl -X PUT http://localhost:3000/api/jogos/999 -H "Content-Type: application/json" -d "{\"preco\": 99.98}"
+
+
+
+curl -X DELETE http://localhost:3000/api/jogos/4
+curl -X DELETE http://localhost:3000/api/jogos/4
+curl http://localhost:3000/api/jogos
+
+
+cd Área\ de\ trabalho/Technologie/PROJETO_LOJA_VIRTUAL_JOGOS_ELETRONICOS/
+sqlite3 loja.db "SELECT id_jogo, nome, ativo FROM JOGO;"
+
+
+
   */

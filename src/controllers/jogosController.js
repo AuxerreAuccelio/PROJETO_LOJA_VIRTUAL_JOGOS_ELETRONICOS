@@ -64,15 +64,15 @@ const jogosController = {
       const result = stmt.run(
         id_admin,
         nome,
-        plataforma,
-        genero,
+        plataforma ?? null,
+        genero ?? null,
         preco,
-        tipo || 'digital',
-        estoque || 0,
-        desenvolvedora,
-        descricao,
-        requisitos_sistema,
-        data_lancamento
+        tipo ?? 'digital',
+        estoque ?? 0,
+        desenvolvedora ?? null,
+        descricao ?? null,
+        requisitos_sistema ?? null,
+        data_lancamento ?? null
       );
 
       res.status(201).json({
@@ -96,16 +96,28 @@ const jogosController = {
         tipo,
         estoque,
         desenvolvedora,
-        descricao
+        descricao, 
+        requisitos_sistema,
+        data_lancamento
       } = req.body;
 
       const stmt = db.prepare(`
-        UPDATE JOGO
-        SET nome = ?, plataforma = ?, genero = ?, preco = ?, tipo = ?, estoque = ?, desenvolvedora = ?, descricao = ?
-        WHERE id_jogo = ? AND ativo = 1
-      `);
+      UPDATE JOGO SET
+        nome = COALESCE(?, nome),
+        plataforma = COALESCE(?, plataforma),
+        genero = COALESCE(?, genero),
+        preco = COALESCE(?, preco),
+        tipo = COALESCE(?, tipo),
+        estoque = COALESCE(?, estoque),
+        desenvolvedora = COALESCE(?, desenvolvedora),
+        descricao = COALESCE(?, descricao),
+        requisitos_sistema = COALESCE(?, requisitos_sistema),
+        data_lancamento = COALESCE(?, data_lancamento)
+      WHERE id_jogo = ? AND ativo = 1
+    `);
 
-      const result = stmt.run(nome, plataforma, genero, preco, tipo, estoque, desenvolvedora, descricao, id);
+      const result = stmt.run(nome ?? null, plataforma ?? null, genero ?? null, preco ?? null, tipo ?? null, estoque ?? null, desenvolvedora ?? null, descricao ?? null, requisitos_sistema ?? null,
+      data_lancamento ?? null, id);
 
       if (result.changes === 0) {
         return res.status(404).json({ mensagem: 'Jogo não encontrado para atualização' });
@@ -121,7 +133,7 @@ const jogosController = {
   deletar: (req, res) => {
     try {
       const { id } = req.params;
-      const stmt = db.prepare('UPDATE JOGO SET ativo = 0 WHERE id_jogo = ?');
+      const stmt = db.prepare('UPDATE JOGO SET ativo = 0 WHERE id_jogo = ? AND ativo = 1');
       const result = stmt.run(id);
 
       if (result.changes === 0) {
