@@ -7,13 +7,11 @@ const { jogoSchema, jogoUpdateSchema } = require('../validations/jogoSchema');
 const jogosController = {
   // 1. Listar todos os jogos ativos
   listarTodos: (req, res) => {
-    try {
+    
       const stmt = db.prepare('SELECT * FROM JOGO WHERE ativo = 1');
       const jogos = stmt.all();
       res.json(jogos);
-    } catch (error) {
-      res.status(500).json({ erro: 'Erro ao buscar jogos', detalhe: error.message });
-    }
+    
   },
 
   // 2. Buscar um jogo por ID
@@ -78,7 +76,7 @@ const jogosController = {
 
   // 4. Atualizar um jogo
   atualizar: (req, res) => {
-    try {
+    
       const { id } = req.params;
       const resultado = jogoUpdateSchema.safeParse(req.body);
 
@@ -121,23 +119,12 @@ const jogosController = {
       }
 
       res.json({ mensagem: 'Jogo atualizado com sucesso!' });
-    } catch (error) {
-
-
-      if (error.code === 'SQLITE_CONSTRAINT_UNIQUE') {
-        return res.status(409).json({
-          mensagem: 'Já existe um jogo com esse nome, plataforma e tipo'
-        });
-      }
-
-
-      res.status(500).json({ erro: 'Erro ao atualizar jogo', detalhe: error.message });
-    }
+    
   },
 
   // 5. Exclusão lógica (Desativar jogo)
   deletar: (req, res) => {
-    try {
+   
       const { id } = req.params;
       const stmt = db.prepare('UPDATE JOGO SET ativo = 0 WHERE id_jogo = ? AND ativo = 1');
       const result = stmt.run(id);
@@ -147,9 +134,7 @@ const jogosController = {
       }
 
       res.json({ mensagem: 'Jogo desativado com sucesso!' });
-    } catch (error) {
-      res.status(500).json({ erro: 'Erro ao deletar jogo', detalhe: error.message });
-    }
+    
   }
 };
 
