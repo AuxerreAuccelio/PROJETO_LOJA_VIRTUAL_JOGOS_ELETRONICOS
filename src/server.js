@@ -138,6 +138,20 @@ curl -i http://localhost:3000/api/jogos/1
 
 
 
+404
+curl -i http://localhost:3000/api/pedidos
+
+
+400
+curl -i -X POST http://localhost:3000/api/jogos \
+  -H "Content-Type: application/json" \
+  -d '{"nome": '
+
+
+
+200
+curl http://localhost:3000/api/jogos
+
 
 
 

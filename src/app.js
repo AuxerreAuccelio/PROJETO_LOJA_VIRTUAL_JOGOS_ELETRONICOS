@@ -3,6 +3,10 @@ const jogosRoutes = require('./routes/jogosRoutes');
 
 const app = express();
 
+const { rotaNaoEncontrada, tratadorDeErros } = require('./middlewares/errorHandler');
+
+
+
 app.use(express.json());
 
 app.get('/', (req, res) => {
@@ -10,5 +14,12 @@ app.get('/', (req, res) => {
 });
 
 app.use('/api/jogos', jogosRoutes);
+
+
+
+app.use(rotaNaoEncontrada);
+app.use(tratadorDeErros);
+
+
 
 module.exports = app;

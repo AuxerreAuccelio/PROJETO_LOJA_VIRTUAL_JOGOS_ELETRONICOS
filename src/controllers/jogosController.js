@@ -18,7 +18,7 @@ const jogosController = {
 
   // 2. Buscar um jogo por ID
   buscarPorId: (req, res) => {
-    try {
+    
       const { id } = req.params;
       const stmt = db.prepare('SELECT * FROM JOGO WHERE id_jogo = ? AND ativo = 1');
       const jogo = stmt.get(id);
@@ -28,9 +28,7 @@ const jogosController = {
       }
 
       res.json(jogo);
-    } catch (error) {
-      res.status(500).json({ erro: 'Erro ao buscar o jogo', detalhe: error.message });
-    }
+ 
   },
 
   // 3. Cadastrar um novo jogo
