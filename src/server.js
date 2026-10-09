@@ -4,11 +4,6 @@ const app = require('./app');
 
 const PORT = process.env.PORT || 3000;
 
-app.listen(PORT, () => {
-  console.log(`Servidor rodando em http://localhost:${PORT}`);
-});
-
-
 // Inicialização do servidor
 app.listen(PORT, () => {
   console.log(`Servidor rodando em http://localhost:${PORT}`);
@@ -99,7 +94,7 @@ curl -i -X PUT http://localhost:3000/api/jogos/3 \
   -d '{"preco": -5}'
 
 
-4200
+400
 curl -i -X PUT http://localhost:3000/api/jogos/3 \
   -H "Content-Type: application/json" \
   -d '{}'
