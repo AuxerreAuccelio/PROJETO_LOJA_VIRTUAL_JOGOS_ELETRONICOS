@@ -9,7 +9,7 @@ const path = require('path');   //require('path'): Importa um módulo nativo do 
 
 
 // Caminho absoluto para o arquivo loja.db na raiz do projeto - 2. Construção do Caminho Dinâmico do Banco
-const dbPath = path.resolve(__dirname, '..', '..', 'loja.db'); 
+const dbPath = path.resolve(__dirname, '..', '..', process.env.DB_PATH || 'loja.db'); 
 // __dirname: É uma variável global nativa do Node.js que devolve o caminho absoluto do diretório onde o 
 // arquivo atual está salvo (neste caso, a pasta src/config/).
 
@@ -23,7 +23,7 @@ const dbPath = path.resolve(__dirname, '..', '..', 'loja.db');
 // (ex: /home/dev1n-alxelio/.../loja.db), evitando erros de "arquivo não encontrado" caso você execute o servidor de pastas diferentes no terminal.
 
 
-const db = new Database(dbPath, { verbose: console.log });  
+const db = new Database(dbPath, { verbose: process.env.NODE_ENV === 'development' ? console.log : undefined });  
 db.pragma('foreign_keys = ON');
 
                                                             //3. Criação da Conexão - new Database(dbPath, ...): Abre a conexão síncrona com o arquivo loja.db. Se o arquivo 
