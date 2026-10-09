@@ -10,20 +10,23 @@ const path = require('path');   //require('path'): Importa um módulo nativo do 
 
 // Caminho absoluto para o arquivo loja.db na raiz do projeto - 2. Construção do Caminho Dinâmico do Banco
 const dbPath = path.resolve(__dirname, '..', '..', 'loja.db'); 
-                                // __dirname: É uma variável global nativa do Node.js que devolve o caminho absoluto do diretório onde o 
-                                // arquivo atual está salvo (neste caso, a pasta src/config/).
+// __dirname: É uma variável global nativa do Node.js que devolve o caminho absoluto do diretório onde o 
+// arquivo atual está salvo (neste caso, a pasta src/config/).
 
-                                // '..', '..': Instrui o Node.js a "subir" dois níveis de pastas:
-                                // O primeiro '..' sai de src/config/ e vai para src/. O segundo '..' sai de src/ e vai para a 
-                                // pasta raiz do projeto (PROJETO_LOJA_VIRTUAL_JOGOS_ELETRONICOS/).
+// '..', '..': Instrui o Node.js a "subir" dois níveis de pastas:
+// O primeiro '..' sai de src/config/ e vai para src/. O segundo '..' sai de src/ e vai para a 
+// pasta raiz do projeto (PROJETO_LOJA_VIRTUAL_JOGOS_ELETRONICOS/).
 
-                                // 'loja.db': Especifica o nome do arquivo do banco de dados na raiz.
+// 'loja.db': Especifica o nome do arquivo do banco de dados na raiz.
 
-                                //path.resolve(...): Junta todas essas partes e gera um caminho absoluto completo e seguro no disco 
-                                // (ex: /home/dev1n-alxelio/.../loja.db), evitando erros de "arquivo não encontrado" caso você execute o servidor de pastas diferentes no terminal.
+//path.resolve(...): Junta todas essas partes e gera um caminho absoluto completo e seguro no disco 
+// (ex: /home/dev1n-alxelio/.../loja.db), evitando erros de "arquivo não encontrado" caso você execute o servidor de pastas diferentes no terminal.
 
 
-const db = new Database(dbPath, { verbose: console.log });  //3. Criação da Conexão - new Database(dbPath, ...): Abre a conexão síncrona com o arquivo loja.db. Se o arquivo 
+const db = new Database(dbPath, { verbose: console.log });  
+db.pragma('foreign_keys = ON');
+
+                                                            //3. Criação da Conexão - new Database(dbPath, ...): Abre a conexão síncrona com o arquivo loja.db. Se o arquivo 
                                                             // não existisse, o better-sqlite3 o criaria automaticamente no local indicado.
 
                                                             // { verbose: console.log }: É uma opção de configuração útil para desenvolvimento. 
