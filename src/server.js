@@ -155,5 +155,47 @@ curl http://localhost:3000/api/jogos
 
 
 
+201
+curl -i -X POST http://localhost:3000/api/auth/registrar \
+  -H "Content-Type: application/json" \
+  -d '{"nome": "Ana Teste", "email": "ana@teste.com", "senha": "senha12345", "aceite_lgpd": true}'
+
+
+
+409
+curl -i -X POST http://localhost:3000/api/auth/registrar \
+  -H "Content-Type: application/json" \
+  -d '{"nome": "Ana Teste", "email": "ANA@teste.com", "senha": "senha12345", "aceite_lgpd": true}'
+
+
+
+400
+curl -i -X POST http://localhost:3000/api/auth/registrar \
+  -H "Content-Type: application/json" \
+  -d '{"nome": "Beto", "email": "beto@teste.com", "senha": "senha12345"}'
+
+
+
+ 400
+ curl -i -X POST http://localhost:3000/api/auth/registrar \
+  -H "Content-Type: application/json" \
+  -d '{"nome": "Beto", "email": "beto@teste.com", "senha": "123", "aceite_lgpd": true}' 
+
+
+
+  
+sqlite3 loja.db "SELECT id_cliente, email, substr(senha,1,7) AS inicio_senha, consentimento_lgpd_em FROM CLIENTE;"
+
+│ id_cliente │      email       │ inicio_senha │   consentimento_lgp...   │
+╞════════════╪══════════════════╪══════════════╪══════════════════════════╡
+│          1 │ carlos@email.com │ $2a$12$      │ 2026-10-01 00:29:37      │
+│          2 │ ana@email.com    │ $2a$12$      │ 2026-10-01 00:29:37      │
+│          3 │ ana@teste.com    │ $2b$10$      │ 2026-10-09T22:21:31.844Z │
+╰────────────┴──────────────────┴──────────────┴──────────────────────────  
+
+
+
+
+
 
 */
