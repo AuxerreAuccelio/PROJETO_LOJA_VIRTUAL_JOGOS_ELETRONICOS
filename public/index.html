@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cartucho · Loja de jogos</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;800&family=Instrument+Sans:wght@400;500;600&display=swap">
+<style>
+:root{--bg:#f5f7fc;--surface:#fff;--ink:#14183b;--muted:#5d6385;--line:#dfe3f2;--brand:#3d4bff;--brand-ink:#fff;--ok:#0f8a5f;--warn:#b4530a;
+--display:"Bricolage Grotesque",system-ui,sans-serif;--text:"Instrument Sans",system-ui,sans-serif}
+@media(prefers-color-scheme:dark){:root{--bg:#0f1230;--surface:#181c45;--ink:#eef0ff;--muted:#a3a9d6;--line:#2b3070;--brand:#7d89ff;--brand-ink:#0f1230;--ok:#4fd6a0;--warn:#f0a35e}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 var(--text)}
+button,input,select{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--brand);outline-offset:2px}
+header{display:flex;gap:16px;align-items:center;justify-content:space-between;flex-wrap:wrap;padding:18px clamp(16px,4vw,48px);border-bottom:1px solid var(--line);background:var(--surface)}
+.logo{font:800 28px var(--display);letter-spacing:-.03em}
+.logo i{font-style:normal;color:var(--brand)}
+.btn{border:1.5px solid var(--ink);background:transparent;border-radius:10px;padding:8px 16px;cursor:pointer;font-weight:600}
+.btn.primary{background:var(--brand);border-color:var(--brand);color:var(--brand-ink)}
+.hero{padding:clamp(32px,6vw,72px) clamp(16px,4vw,48px) 24px;max-width:1200px;margin:auto}
+h1{font:800 clamp(34px,6vw,64px)/1.02 var(--display);letter-spacing:-.035em;margin:0 0 12px;max-width:16ch}
+.hero p{color:var(--muted);max-width:52ch;margin:0 0 24px}
+.tools{display:flex;gap:12px;flex-wrap:wrap}
+.tools input,.tools select{background:var(--surface);border:1.5px solid var(--line);border-radius:10px;padding:10px 14px}
+.tools input{flex:1 1 260px}
+main{max-width:1200px;margin:auto;padding:8px clamp(16px,4vw,48px) 64px}
+.chips{display:flex;gap:8px;flex-wrap:wrap;margin:20px 0}
+.chip{border:1.5px solid var(--line);background:var(--surface);border-radius:999px;padding:6px 14px;cursor:pointer}
+.chip[aria-pressed=true]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:22px}
+.case{display:flex;background:var(--surface);border:1.5px solid var(--line);border-radius:6px 14px 14px 6px;overflow:hidden;cursor:pointer;text-align:left;padding:0;transition:transform .15s}
+.case:hover{transform:translateY(-3px)}
+.spine{width:34px;flex:none;background:var(--c);color:#fff;display:flex;align-items:center;justify-content:center;font:800 12px var(--display);letter-spacing:.04em;writing-mode:vertical-rl;transform:rotate(180deg)}
+.body{padding:16px;display:flex;flex-direction:column;gap:6px;flex:1;min-height:190px}
+.cover{height:84px;border-radius:8px;background:var(--c);display:grid;place-items:center;font:800 34px var(--display);color:#fff;margin-bottom:6px}
+.case h3{font:600 18px/1.2 var(--display);margin:0}
+.meta{color:var(--muted);font-size:14px}
+.price{margin-top:auto;font:800 20px var(--display)}
+.tag{font-size:13px;font-weight:600}
+.tag.ok{color:var(--ok)}.tag.warn{color:var(--warn)}
+.state{padding:48px 0;color:var(--muted);text-align:center}
+dialog{border:1.5px solid var(--line);border-radius:16px;background:var(--surface);color:var(--ink);padding:24px;width:min(440px,92vw)}
+dialog::backdrop{background:rgba(10,12,40,.55)}
+dialog h2{font:800 24px var(--display);margin:0 0 12px}
+label{display:block;font-size:14px;font-weight:600;margin:12px 0 4px}
+dialog input[type=text],dialog input[type=email],dialog input[type=password]{width:100%;background:var(--bg);border:1.5px solid var(--line);border-radius:10px;padding:10px 12px}
+.row{display:flex;gap:8px;margin-top:18px;flex-wrap:wrap}
+.check{display:flex;gap:8px;align-items:flex-start;font-weight:400;margin-top:14px}
+.err{color:var(--warn);font-size:14px;margin-top:10px;min-height:1.2em}
+.tabs{display:flex;gap:8px;margin-bottom:8px}
+@media(prefers-reduced-motion:reduce){.case{transition:none}}
+</style>
+</head>
+<body>
+<header>
+  <div class="logo">Cartucho<i>.</i></div>
+  <div id="conta"></div>
+</header>
+
+<section class="hero">
+  <h1>Jogos físicos e digitais, num só lugar.</h1>
+  <p>Escolha a plataforma, veja o preço e confira se ainda tem no estoque.</p>
+  <div class="tools">
+    <input id="busca" type="search" placeholder="Buscar por nome ou desenvolvedora" aria-label="Buscar jogos">
+    <select id="tipo" aria-label="Tipo de jogo">
+      <option value="">Digital e físico</option>
+      <option value="digital">Só digital</option>
+      <option value="fisico">Só físico</option>
+    </select>
+  </div>
+</section>
+
+<main>
+  <div class="chips" id="chips" role="group" aria-label="Plataformas"></div>
+  <div class="grid" id="grid" aria-live="polite"></div>
+  <div class="state" id="estado">Carregando jogos…</div>
+</main>
+
+<dialog id="detalhe"></dialog>
+
+<dialog id="auth">
+  <div class="tabs">
+    <button class="chip" id="tabEntrar" aria-pressed="true" type="button">Entrar</button>
+    <button class="chip" id="tabCriar" aria-pressed="false" type="button">Criar conta</button>
+  </div>
+  <form id="form" novalidate>
+    <h2 id="authTitulo">Entrar</h2>
+    <div id="campoNome" hidden><label for="nome">Nome</label><input id="nome" type="text" autocomplete="name"></div>
+    <label for="email">E-mail</label><input id="email" type="email" autocomplete="email">
+    <label for="senha">Senha</label><input id="senha" type="password" autocomplete="current-password">
+    <label class="check" id="campoLgpd" hidden><input id="lgpd" type="checkbox"> Aceito os termos de uso e o tratamento dos meus dados (LGPD).</label>
+    <div class="err" id="erro" role="alert"></div>
+    <div class="row">
+      <button class="btn primary" id="enviar" type="submit">Entrar</button>
+      <button class="btn" type="button" id="fechar">Cancelar</button>
+    </div>
+  </form>
+</dialog>
+
+<script>
+const $ = s => document.querySelector(s);
+const cores = ['#3d4bff','#e0457b','#0f9d78','#d9780b','#7a3dff','#0a8fb5'];
+const corDe = t => cores[[...t].reduce((a,c)=>a+c.charCodeAt(0),0) % cores.length];
+const brl = v => new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(v);
+const el = (tag, props={}, ...kids) => { const e=document.createElement(tag); Object.assign(e,props); kids.forEach(k=>e.append(k)); return e; };
+
+let jogos = [], plataforma = '', token = sessionStorage.getItem('token');
+
+async function api(url, opts={}) {
+  const headers = {'Content-Type':'application/json'};
+  if (token) headers.Authorization = 'Bearer ' + token;
+  const r = await fetch(url, {...opts, headers});
+  const dados = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(dados.erros?.map(e => `${e.campo}: ${e.problema}`).join('; ') || dados.mensagem || 'Erro inesperado');
+  return dados;
+}
+
+function desenharChips() {
+  const plats = [...new Set(jogos.map(j => j.plataforma))].sort();
+  $('#chips').replaceChildren(...['', ...plats].map(p => {
+    const b = el('button', {className:'chip', type:'button', textContent: p || 'Todas'});
+    b.setAttribute('aria-pressed', String(p === plataforma));
+    b.onclick = () => { plataforma = p; desenharChips(); desenharGrid(); };
+    return b;
+  }));
+}
+
+function desenharGrid() {
+  const q = $('#busca').value.trim().toLowerCase(), t = $('#tipo').value;
+  const lista = jogos.filter(j =>
+    (!plataforma || j.plataforma === plataforma) && (!t || j.tipo === t) &&
+    (!q || `${j.nome} ${j.desenvolvedora || ''}`.toLowerCase().includes(q)));
+  $('#estado').textContent = lista.length ? '' : 'Nenhum jogo encontrado. Tente outra plataforma ou outro termo.';
+  $('#grid').replaceChildren(...lista.map(j => {
+    const c = el('button', {className:'case', type:'button'},
+      el('span', {className:'spine', textContent: j.plataforma}),
+      el('span', {className:'body'},
+        el('span', {className:'cover', textContent: j.nome.slice(0,2).toUpperCase()}),
+        el('h3', {textContent: j.nome}),
+        el('span', {className:'meta', textContent: `${j.genero || 'Sem gênero'} · ${j.tipo === 'fisico' ? 'Físico' : 'Digital'}`}),
+        el('span', {className:'tag ' + (j.estoque > 0 ? 'ok' : 'warn'), textContent: j.estoque > 0 ? (j.estoque <= 5 ? `Últimas ${j.estoque} unidades` : 'Em estoque') : 'Sem estoque'}),
+        el('span', {className:'price', textContent: brl(j.preco)})));
+    c.style.setProperty('--c', corDe(j.plataforma));
+    c.onclick = () => abrirDetalhe(j.id_jogo);
+    return c;
+  }));
+}
+
+async function abrirDetalhe(id) {
+  try {
+    const j = await api('/api/jogos/' + id);
+    const d = $('#detalhe');
+    d.replaceChildren(
+      el('h2', {textContent: j.nome}),
+      el('p', {className:'meta', textContent: `${j.plataforma} · ${j.tipo === 'fisico' ? 'Físico' : 'Digital'} · ${j.desenvolvedora || 'Desenvolvedora não informada'}`}),
+      el('p', {textContent: j.descricao || 'Sem descrição.'}),
+      el('p', {className:'price', textContent: brl(j.preco)}),
+      el('div', {className:'row'}, el('button', {className:'btn', type:'button', textContent:'Fechar', onclick: () => d.close()})));
+    d.showModal();
+  } catch (e) { $('#estado').textContent = e.message; }
+}
+
+function desenharConta(cliente) {
+  const box = $('#conta');
+  if (!cliente) {
+    box.replaceChildren(el('button', {className:'btn primary', textContent:'Entrar ou criar conta', onclick: () => abrirAuth('entrar')}));
+    return;
+  }
+  box.replaceChildren(el('span', {textContent: `Olá, ${cliente.nome.split(' ')[0]} `}),
+    el('button', {className:'btn', textContent:'Sair', onclick: () => { token = null; sessionStorage.removeItem('token'); desenharConta(null); }}));
+}
+
+let modo = 'entrar';
+function abrirAuth(m) {
+  modo = m;
+  const criar = m === 'criar';
+  $('#tabEntrar').setAttribute('aria-pressed', String(!criar));
+  $('#tabCriar').setAttribute('aria-pressed', String(criar));
+  $('#authTitulo').textContent = criar ? 'Criar conta' : 'Entrar';
+  $('#enviar').textContent = criar ? 'Criar conta' : 'Entrar';
+  $('#campoNome').hidden = $('#campoLgpd').hidden = !criar;
+  $('#senha').autocomplete = criar ? 'new-password' : 'current-password';
+  $('#erro').textContent = '';
+  if (!$('#auth').open) $('#auth').showModal();
+}
+$('#tabEntrar').onclick = () => abrirAuth('entrar');
+$('#tabCriar').onclick = () => abrirAuth('criar');
+$('#fechar').onclick = () => $('#auth').close();
+
+$('#form').onsubmit = async ev => {
+  ev.preventDefault();
+  const email = $('#email').value.trim(), senha = $('#senha').value;
+  try {
+    if (modo === 'criar') {
+      await api('/api/auth/registrar', {method:'POST', body: JSON.stringify({nome: $('#nome').value.trim(), email, senha, aceite_lgpd: $('#lgpd').checked})});
+    }
+    const r = await api('/api/auth/login', {method:'POST', body: JSON.stringify({email, senha})});
+    token = r.token; sessionStorage.setItem('token', token);
+    desenharConta(r.cliente);
+    $('#auth').close(); $('#form').reset();
+  } catch (e) { $('#erro').textContent = e.message; }
+};
+
+$('#busca').oninput = desenharGrid;
+$('#tipo').onchange = desenharGrid;
+
+(async () => {
+  desenharConta(null);
+  if (token) { try { desenharConta((await api('/api/auth/perfil')).cliente); } catch { token = null; sessionStorage.removeItem('token'); } }
+  try {
+    jogos = await api('/api/jogos');
+    desenharChips(); desenharGrid();
+  } catch (e) { $('#estado').textContent = 'Não foi possível carregar os jogos. Confira se o servidor está rodando.'; }
+})();
+</script>
+</body>
+</html>
