@@ -7,4 +7,10 @@ const registroSchema = z.object({
   aceite_lgpd: z.literal(true)
 });
 
-module.exports = { registroSchema };
+
+const loginSchema = z.object({
+  email: z.string().email().max(150),
+  senha: z.string().min(1).max(72)
+});
+
+module.exports = { registroSchema, loginSchema };
