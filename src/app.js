@@ -1,3 +1,5 @@
+const path = require('path');
+
 const express = require('express');
 const jogosRoutes = require('./routes/jogosRoutes');
 
@@ -9,6 +11,8 @@ const authRoutes = require('./routes/authRoutes');
 
 
 app.use(express.json());
+
+app.use(express.static(path.join(__dirname, '..', 'public')));
 
 app.get('/', (req, res) => {
   res.json({ mensagem: 'API da Loja Virtual de Jogos rodando com sucesso!' });
