@@ -196,6 +196,24 @@ sqlite3 loja.db "SELECT id_cliente, email, substr(senha,1,7) AS inicio_senha, co
 
 
 
+Teste para saber se a senha é: senha12345 devolvendo true
+
+node -e "
+const b = require('bcryptjs');
+const db = require('better-sqlite3')('loja.db');
+for (const c of db.prepare('SELECT email, senha FROM CLIENTE').all())
+  console.log(c.email, b.compareSync('senha12345', c.senha));
+"
+carlos@email.com false
+ana@email.com false
+ana@teste.com true
+demo@teste.com true
+demo2@teste.com true
+beto@teste.com true
+carlos@teste.com true
+danilo@teste.com true
+
+
 
 
 */
