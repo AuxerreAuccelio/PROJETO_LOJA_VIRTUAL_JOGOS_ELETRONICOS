@@ -209,6 +209,7 @@ ana@email.com false
 ana@teste.com true
 demo@teste.com true
 demo2@teste.com true
+demo3@teste.com true
 beto@teste.com true
 carlos@teste.com true
 danilo@teste.com true
