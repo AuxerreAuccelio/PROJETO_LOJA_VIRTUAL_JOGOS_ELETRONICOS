@@ -217,4 +217,23 @@ danilo@teste.com true
 
 
 
+401
+curl -i http://localhost:3000/api/auth/perfil
+
+401
+curl -i http://localhost:3000/api/auth/perfil -H "Authorization: Bearer abc.def.ghi"
+
+200
+curl -i http://localhost:3000/api/auth/perfil -H "Authorization: Bearer $TOKEN"
+
+
+
+401 Unauthorized {"mensagem":"Token inválido"}
+sqlite3 loja.db "UPDATE CLIENTE SET ativo = 0 WHERE email = 'ana@teste.com';"
+sqlite3 loja.db "SELECT id_cliente, email,  ativo FROM CLIENTE;"
+curl -i http://localhost:3000/api/auth/perfil -H "Authorization: Bearer $TOKEN"
+
+
+
+
 */
