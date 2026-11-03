@@ -1,3 +1,29 @@
+const path = require('path');
+require('dotenv').config({ path: path.join(__dirname, '..', '.env') });
+
+const app = require('./app');
+const { conectarMongo } = require('./config/mongo');
+
+const PORT = process.env.PORT || 3000;
+
+conectarMongo()
+  .then(() => {
+    app.listen(PORT, () => {
+      console.log(`Servidor rodando em http://localhost:${PORT}`);
+    });
+  })
+  .catch((err) => {
+    console.error('Falha ao conectar no MongoDB:', err.message);
+    process.exit(1);
+  });
+
+
+
+
+
+/*
+SUBSTITUÍDO PELO CÓDIGO ACIMA APÓS A INSTALAÇÃO DO MONGODB 
+
 require('dotenv').config();
 
 const app = require('./app');
@@ -8,6 +34,9 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`Servidor rodando em http://localhost:${PORT}`);
 });
+
+*/
+
 
 
 
