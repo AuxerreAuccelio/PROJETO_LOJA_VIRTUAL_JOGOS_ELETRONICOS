@@ -15,6 +15,10 @@ const jogosController = require('../controllers/jogosController');  // const jog
 
 const validarId = require('../middlewares/validarId');
 
+const autenticar = require('../middlewares/autenticar');
+
+const avaliacoesController = require('../controllers/avaliacoesController');
+
 
 
 // Mapeamento RESTful - 2. Mapeamento RESTful de Endpoints 
@@ -39,6 +43,8 @@ router.put('/:id', validarId, jogosController.atualizar);   // http://localhost:
 
 router.delete('/:id', validarId, jogosController.deletar);  // http://localhost:3000/api/jogos/1
                                                             // Usado para desativar ou deletar o jogo do banco correspondente ao :id informado na URL, executando a função deletar.
+
+router.post('/:id/avaliacoes', autenticar, validarId, avaliacoesController.criar);
 
 module.exports = router; // Exporta essa configuração de rotas organizada para que o server.js possa importá-la e ativá-la com o comando app.use('/api/jogos', jogosRoutes).
 

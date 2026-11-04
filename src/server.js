@@ -265,4 +265,82 @@ curl -i http://localhost:3000/api/auth/perfil -H "Authorization: Bearer $TOKEN"
 
 
 
+exemplo de inicialização do MongoDB
+podman start mongo-local
+
+node src/server.js
+
+
+
+
+obter Token Novo
+TOKEN=$(curl -s -X POST http://localhost:3000/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email": "ana@teste.com", "senha": "senha12345"}' | node -pe "JSON.parse(require('fs').readFileSync(0,'utf8')).token")
+
+
+401 sem token
+curl -i -X POST http://localhost:3000/api/jogos/1/avaliacoes \
+  -H "Content-Type: application/json" -d '{"nota": 5}'
+
+
+
+400
+curl -i -X POST http://localhost:3000/api/jogos/1/avaliacoes \
+  -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" -d '{"nota": 6}'
+
+
+404 jogo inexistente
+curl -i -X POST http://localhost:3000/api/jogos/9999/avaliacoes \
+  -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
+  -d '{"nota": 5}'
+
+
+201
+curl -i -X POST http://localhost:3000/api/jogos/1/avaliacoes \
+  -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
+  -d '{"nota": 5, "comentario": "Obra-prima."}'
+  
+  
+409 - você já avaliou esse jogo
+curl -i -X POST http://localhost:3000/api/jogos/1/avaliacoes \
+  -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
+  -d '{"nota": 4}'
+
+
+
+Documento no MongoDB  
+podman exec mongo-local mongosh loja_virtual --quiet --eval "db.avaliacoes.find().toArray()"
+
+
+avaliacaoSchema só aceita nota e comentario - 201
+curl -i -X POST http://localhost:3000/api/jogos/2/avaliacoes \
+  -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
+  -d '{"nota": 4, "autor": "Hacker", "id_cliente": 1}'
+
+
+
+400 - apontando nota decimal
+curl -i -X POST http://localhost:3000/api/jogos/3/avaliacoes \
+  -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
+  -d '{"nota": 4.5}'
+
+
+
+
+sqlite3 loja.db "SELECT id_cliente, email, ativo FROM CLIENTE WHERE email = 'ana@teste.com';"
+echo "$HASH" | cut -c1-7
+sqlite3 loja.db "UPDATE CLIENTE SET senha = '$HASH' WHERE email = 'ana@teste.com';"
+node -e "
+const b = require('bcryptjs');
+const db = require('better-sqlite3')('loja.db');
+const c = db.prepare('SELECT senha FROM CLIENTE WHERE email = ?').get('ana@teste.com');
+console.log('senha12345 confere:', b.compareSync('senha12345', c.senha));
+"
+
+
+
+
+
+
 */

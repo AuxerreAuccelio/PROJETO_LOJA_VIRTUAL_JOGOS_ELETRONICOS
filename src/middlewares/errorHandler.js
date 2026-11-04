@@ -22,6 +22,11 @@ function tratadorDeErros(err, req, res, next) {
     return res.status(400).json({ mensagem: 'Referência inválida (verifique id_admin)' });
   }
 
+  // Avaliação duplicada no MongoDB (índice único)
+  if (err.code === 11000) {
+    return res.status(409).json({ mensagem: 'Você já avaliou este jogo' });
+  }
+
   // Qualquer outro erro: registra no servidor, resposta genérica ao cliente
   console.error(err);
   res.status(500).json({ erro: 'Erro interno do servidor' });

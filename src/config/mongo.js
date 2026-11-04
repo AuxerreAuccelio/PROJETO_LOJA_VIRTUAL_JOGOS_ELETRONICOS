@@ -5,6 +5,7 @@ async function conectarMongo() {
   if (!uri) throw new Error('MONGO_URI ausente no .env');
 
   await mongoose.connect(uri, { serverSelectionTimeoutMS: 5000 });
+  await require('../models/avaliacao').init();
   console.log('MongoDB conectado');
 }
 
