@@ -9,6 +9,8 @@ const { rotaNaoEncontrada, tratadorDeErros } = require('./middlewares/errorHandl
 
 const authRoutes = require('./routes/authRoutes');
 
+const avaliacoesRoutes = require('./routes/avaliacoesRoutes');
+
 
 app.use(express.json());
 
@@ -21,6 +23,8 @@ app.get('/', (req, res) => {
 app.use('/api/jogos', jogosRoutes);
 
 app.use('/api/auth', authRoutes);
+
+app.use('/api/avaliacoes', avaliacoesRoutes);
 
 app.use(rotaNaoEncontrada);
 app.use(tratadorDeErros);

@@ -66,6 +66,20 @@ const avaliacoesController = {
     const media = total ? Math.round(resumo[0].media * 10) / 10 : null;
 
     res.json({ id_jogo, media, total, pagina, limite, avaliacoes });
+  },
+
+
+    resumo: async (req, res) => {
+    const dados = await Avaliacao.aggregate([
+      { $group: { _id: '$id_jogo', media: { $avg: '$nota' }, total: { $sum: 1 } } }
+    ]);
+
+    const resumo = {};
+    for (const d of dados) {
+      resumo[d._id] = { media: Math.round(d.media * 10) / 10, total: d.total };
+    }
+
+    res.json(resumo);
   }
 
 
