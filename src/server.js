@@ -327,6 +327,23 @@ curl -i -X POST http://localhost:3000/api/jogos/3/avaliacoes \
 
 
 
+409 - o jogo 1 já deve ter sido avaliado
+curl -s -X POST http://localhost:3000/api/jogos/1/avaliacoes \
+  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZF9jbGllbnRlIjozLCJpYXQiOjE3OTM4MzI1NzUsImV4cCI6MTc5MzgzNjE3NX0.WlT3_EsxKUv72GDE3ZCNqRbmIY7BzC7Hlq2lApAg9_A" -H "Content-Type: application/json" -d '{"nota": 4}'
+
+400 - nota decimal
+curl -s -X POST http://localhost:3000/api/jogos/3/avaliacoes \
+  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZF9jbGllbnRlIjozLCJpYXQiOjE3OTM4MzI1NzUsImV4cCI6MTc5MzgzNjE3NX0.WlT3_EsxKUv72GDE3ZCNqRbmIY7BzC7Hlq2lApAg9_A" -H "Content-Type: application/json" -d '{"nota": 4.5}'
+
+# F: o que está gravado no Mongo
+podman exec mongo-local mongosh loja_virtual --quiet --eval "db.avaliacoes.find().toArray()"
+
+
+Login é necessário para gerar o TOKEN cada vez que expira
+curl -s -X POST http://localhost:3000/api/auth/login -H "Content-Type: application/json" -d '{"email": "ana@teste.com", "senha": "senha12345"}'
+
+curl -s -X POST http://localhost:3000/api/jogos/1/avaliacoes -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZF9jbGllbnRlIjozLCJpYXQiOjE3OTM4MzI1NzUsImV4cCI6MTc5MzgzNjE3NX0.WlT3_EsxKUv72GDE3ZCNqRbmIY7BzC7Hlq2lApAg9_A" -H "Content-Type: application/json" -d '{"nota": 4}'
+
 
 sqlite3 loja.db "SELECT id_cliente, email, ativo FROM CLIENTE WHERE email = 'ana@teste.com';"
 echo "$HASH" | cut -c1-7
@@ -337,6 +354,28 @@ const db = require('better-sqlite3')('loja.db');
 const c = db.prepare('SELECT senha FROM CLIENTE WHERE email = ?').get('ana@teste.com');
 console.log('senha12345 confere:', b.compareSync('senha12345', c.senha));
 "
+
+
+
+# A: lista do jogo 1. Esperado: 200 com media, total e avaliacoes
+curl -s http://localhost:3000/api/jogos/1/avaliacoes
+
+# B: paginação. Esperado: 1 avaliação, pagina 1, limite 1
+curl -s "http://localhost:3000/api/jogos/1/avaliacoes?pagina=1&limite=1"
+
+# C: limite inválido. Esperado: 400 apontando "limite"
+curl -i "http://localhost:3000/api/jogos/1/avaliacoes?limite=0"
+
+# D: jogo inexistente. Esperado: 404
+curl -i http://localhost:3000/api/jogos/9999/avaliacoes
+
+# E: jogo ativo sem avaliações. Esperado: 200 com media null e total 0
+curl -s http://localhost:3000/api/jogos/3/avaliacoes
+
+
+
+
+
 
 
 

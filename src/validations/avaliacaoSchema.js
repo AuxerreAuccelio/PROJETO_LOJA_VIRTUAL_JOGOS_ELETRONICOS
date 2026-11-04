@@ -5,4 +5,11 @@ const avaliacaoSchema = z.object({
   comentario: z.string().trim().max(1000).optional()
 });
 
-module.exports = { avaliacaoSchema };
+/* O z.coerce converte o texto da URL (?limite=5) em número antes de validar. */
+const consultaSchema = z.object({
+  pagina: z.coerce.number().int().min(1).default(1),
+  limite: z.coerce.number().int().min(1).max(50).default(10)
+});
+
+module.exports = { avaliacaoSchema, consultaSchema };
+

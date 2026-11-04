@@ -46,6 +46,8 @@ router.delete('/:id', validarId, jogosController.deletar);  // http://localhost:
 
 router.post('/:id/avaliacoes', autenticar, validarId, avaliacoesController.criar);
 
+router.get('/:id/avaliacoes', validarId, avaliacoesController.listar); // Ela não leva o autenticar, porque ler avaliações não exige login.
+
 module.exports = router; // Exporta essa configuração de rotas organizada para que o server.js possa importá-la e ativá-la com o comando app.use('/api/jogos', jogosRoutes).
 
 
