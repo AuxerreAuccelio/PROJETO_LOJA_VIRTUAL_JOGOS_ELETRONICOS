@@ -377,7 +377,23 @@ curl -s http://localhost:3000/api/jogos/3/avaliacoes
 
 
 
+# A: sem token (401)
+curl -i -X POST http://localhost:3000/api/pedidos -H "Content-Type: application/json" -d '{"itens":[{"id_jogo":1,"quantidade":1}]}'
 
+# B: lista vazia (400)
+curl -i -X POST http://localhost:3000/api/pedidos -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" -d '{"itens":[]}'
+
+# C: jogo inexistente (404)
+curl -i -X POST http://localhost:3000/api/pedidos -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" -d '{"itens":[{"id_jogo":9999,"quantidade":1}]}'
+
+# D: estoque insuficiente (409)
+curl -i -X POST http://localhost:3000/api/pedidos -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" -d '{"itens":[{"id_jogo":2,"quantidade":10}]}'
+
+# E: pedido válido (201, com valor_total calculado pelo servidor)
+curl -i -X POST http://localhost:3000/api/pedidos -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" -d '{"itens":[{"id_jogo":1,"quantidade":2},{"id_jogo":3,"quantidade":1}]}'
+
+# F: consultar o pedido criado (200). Troque 1 pelo id_pedido do teste E
+curl -s http://localhost:3000/api/pedidos/1 -H "Authorization: Bearer $TOKEN"
 
 
 

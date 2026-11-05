@@ -11,6 +11,8 @@ const authRoutes = require('./routes/authRoutes');
 
 const avaliacoesRoutes = require('./routes/avaliacoesRoutes');
 
+const pedidosRoutes = require('./routes/pedidosRoutes');
+
 
 app.use(express.json());
 
@@ -25,6 +27,8 @@ app.use('/api/jogos', jogosRoutes);
 app.use('/api/auth', authRoutes);
 
 app.use('/api/avaliacoes', avaliacoesRoutes);
+
+app.use('/api/pedidos', pedidosRoutes);
 
 app.use(rotaNaoEncontrada);
 app.use(tratadorDeErros);

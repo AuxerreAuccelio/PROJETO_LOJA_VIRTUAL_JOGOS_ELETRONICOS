@@ -1,3 +1,6 @@
+const ErroNegocio = require('../utils/ErroNegocio');
+
+
 // Rota que não existe
 function rotaNaoEncontrada(req, res) {
   res.status(404).json({ mensagem: 'Rota não encontrada' });
@@ -5,6 +8,12 @@ function rotaNaoEncontrada(req, res) {
 
 // Tratador global de erros (precisa ter 4 parâmetros)
 function tratadorDeErros(err, req, res, next) {
+
+  if (err instanceof ErroNegocio) {
+    return res.status(err.status).json({ mensagem: err.message });
+  }
+
+
   // JSON malformado no corpo da requisição
   if (err.type === 'entity.parse.failed') {
     return res.status(400).json({ mensagem: 'JSON inválido no corpo da requisição' });
