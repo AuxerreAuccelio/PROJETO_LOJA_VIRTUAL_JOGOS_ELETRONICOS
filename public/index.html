@@ -6,7 +6,7 @@
 <title>Cartucho · Loja de jogos</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;800&family=Instrument+Sans:wght@400;500;600&display=swap">
 <style>
-:root{--bg:#f5f7fc;--surface:#fff;--ink:#14183b;--muted:#5d6385;--line:#dfe3f2;--brand:#3d4bff;--brand-ink:#fff;--ok:#0f8a5f;--warn:#b4530a;
+:root{--bg:#f5f7fc;--surface:#fff;--ink:#14183b;--muted:#5d6385;--line:#dfe3f2;--brand:#3d4bff;--brand-ink:#fff;--ok:#0b7a53;--warn:#b4530a;
 --display:"Bricolage Grotesque",system-ui,sans-serif;--text:"Instrument Sans",system-ui,sans-serif}
 @media(prefers-color-scheme:dark){:root{--bg:#0f1230;--surface:#181c45;--ink:#eef0ff;--muted:#a3a9d6;--line:#2b3070;--brand:#7d89ff;--brand-ink:#0f1230;--ok:#4fd6a0;--warn:#f0a35e}}
 *{box-sizing:border-box}
@@ -33,7 +33,7 @@ main{max-width:1200px;margin:auto;padding:8px clamp(16px,4vw,48px) 64px}
 .case{display:flex;background:var(--surface);border:1.5px solid var(--line);border-radius:6px 14px 14px 6px;overflow:hidden;cursor:pointer;text-align:left;padding:0;transition:transform .15s}
 .case:hover{transform:translateY(-3px)}
 .spine{width:34px;flex:none;background:var(--c);color:#fff;display:flex;align-items:center;justify-content:center;font:800 12px var(--display);letter-spacing:.04em;writing-mode:vertical-rl;transform:rotate(180deg)}
-.body{padding:16px;display:flex;flex-direction:column;gap:6px;flex:1;min-height:190px}
+.body{padding:16px;display:flex;flex-direction:column;gap:6px;flex:1;min-height:210px}
 .cover{height:84px;border-radius:8px;background:var(--c);display:grid;place-items:center;font:800 34px var(--display);color:#fff;margin-bottom:6px}
 .case h3{font:600 18px/1.2 var(--display);margin:0}
 .meta{color:var(--muted);font-size:14px}
@@ -41,7 +41,12 @@ main{max-width:1200px;margin:auto;padding:8px clamp(16px,4vw,48px) 64px}
 .tag{font-size:13px;font-weight:600}
 .tag.ok{color:var(--ok)}.tag.warn{color:var(--warn)}
 .state{padding:48px 0;color:var(--muted);text-align:center}
-dialog{border:1.5px solid var(--line);border-radius:16px;background:var(--surface);color:var(--ink);padding:24px;width:min(440px,92vw)}
+dialog{border:1.5px solid var(--line);border-radius:16px;background:var(--surface);color:var(--ink);padding:24px;width:min(520px,92vw);max-height:90vh;overflow:auto}
+dialog h3{font:600 18px var(--display);margin:16px 0 6px}
+.nota{font-size:14px;font-weight:600;color:var(--brand)}
+.rev{border-top:1px solid var(--line);padding:10px 0}
+.rev p{margin:2px 0 0}
+dialog select,dialog textarea{width:100%;background:var(--bg);border:1.5px solid var(--line);border-radius:10px;padding:10px 12px;resize:vertical}
 dialog::backdrop{background:rgba(10,12,40,.55)}
 dialog h2{font:800 24px var(--display);margin:0 0 12px}
 label{display:block;font-size:14px;font-weight:600;margin:12px 0 4px}
@@ -106,13 +111,14 @@ const corDe = t => cores[[...t].reduce((a,c)=>a+c.charCodeAt(0),0) % cores.lengt
 const brl = v => new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(v);
 const el = (tag, props={}, ...kids) => { const e=document.createElement(tag); Object.assign(e,props); kids.forEach(k=>e.append(k)); return e; };
 
-let jogos = [], plataforma = '', token = sessionStorage.getItem('token');
+let jogos = [], resumo = {}, cliente = null, plataforma = '', token = sessionStorage.getItem('token');
 
 async function api(url, opts={}) {
   const headers = {'Content-Type':'application/json'};
   if (token) headers.Authorization = 'Bearer ' + token;
   const r = await fetch(url, {...opts, headers});
   const dados = await r.json().catch(() => ({}));
+  if (r.status === 401 && token && !url.includes('/auth/login')) { token = null; sessionStorage.removeItem('token'); desenharConta(null); }
   if (!r.ok) throw new Error(dados.erros?.map(e => `${e.campo}: ${e.problema}`).join('; ') || dados.mensagem || 'Erro inesperado');
   return dados;
 }
@@ -140,6 +146,7 @@ function desenharGrid() {
         el('span', {className:'cover', textContent: j.nome.slice(0,2).toUpperCase()}),
         el('h3', {textContent: j.nome}),
         el('span', {className:'meta', textContent: `${j.genero || 'Sem gênero'} · ${j.tipo === 'fisico' ? 'Físico' : 'Digital'}`}),
+        notaEl(j.id_jogo),
         el('span', {className:'tag ' + (j.estoque > 0 ? 'ok' : 'warn'), textContent: j.estoque > 0 ? (j.estoque <= 5 ? `Últimas ${j.estoque} unidades` : 'Em estoque') : 'Sem estoque'}),
         el('span', {className:'price', textContent: brl(j.preco)})));
     c.style.setProperty('--c', corDe(j.plataforma));
@@ -148,21 +155,58 @@ function desenharGrid() {
   }));
 }
 
+function notaTexto(r) {
+  if (!r) return 'Sem avaliações';
+  return `★ ${String(r.media).replace('.', ',')} · ${r.total} ${r.total === 1 ? 'avaliação' : 'avaliações'}`;
+}
+const notaEl = id => el('span', {className:'nota', textContent: notaTexto(resumo[id])});
+
+function formAvaliar(id) {
+  if (!cliente) return el('p', {className:'meta', textContent:'Entre na sua conta para avaliar este jogo.'});
+  const nota = el('select', {id:'novaNota'}, ...[5,4,3,2,1].map(n => el('option', {value:n, textContent:`${n} ${'★'.repeat(n)}`})));
+  const com = el('textarea', {id:'novoCom', maxLength:1000, rows:3, placeholder:'Comentário (opcional)'});
+  const erro = el('div', {className:'err', role:'alert'});
+  const btn = el('button', {className:'btn primary', type:'button', textContent:'Enviar avaliação'});
+  btn.onclick = async () => {
+    try {
+      const corpo = {nota: Number(nota.value)};
+      if (com.value.trim()) corpo.comentario = com.value.trim();
+      await api(`/api/jogos/${id}/avaliacoes`, {method:'POST', body: JSON.stringify(corpo)});
+      resumo = await api('/api/avaliacoes/resumo');
+      desenharGrid();
+      abrirDetalhe(id);
+    } catch (e) { erro.textContent = e.message; }
+  };
+  return el('div', {},
+    el('label', {htmlFor:'novaNota', textContent:'Sua nota'}), nota,
+    el('label', {htmlFor:'novoCom', textContent:'Comentário'}), com, erro,
+    el('div', {className:'row'}, btn));
+}
+
 async function abrirDetalhe(id) {
   try {
-    const j = await api('/api/jogos/' + id);
+    const [j, av] = await Promise.all([api('/api/jogos/' + id), api(`/api/jogos/${id}/avaliacoes?limite=5`)]);
     const d = $('#detalhe');
+    const lista = av.avaliacoes.length
+      ? av.avaliacoes.map(a => el('div', {className:'rev'},
+          el('b', {textContent:`${a.autor} · ${'★'.repeat(a.nota)} · ${new Date(a.data).toLocaleDateString('pt-BR')}`}),
+          el('p', {className:'meta', textContent: a.comentario || 'Sem comentário.'})))
+      : [el('p', {className:'meta', textContent:'Ainda sem avaliações.'})];
     d.replaceChildren(
       el('h2', {textContent: j.nome}),
-      el('p', {className:'meta', textContent: `${j.plataforma} · ${j.tipo === 'fisico' ? 'Físico' : 'Digital'} · ${j.desenvolvedora || 'Desenvolvedora não informada'}`}),
+      el('p', {className:'meta', textContent:`${j.plataforma} · ${j.tipo === 'fisico' ? 'Físico' : 'Digital'} · ${j.desenvolvedora || 'Desenvolvedora não informada'}`}),
       el('p', {textContent: j.descricao || 'Sem descrição.'}),
       el('p', {className:'price', textContent: brl(j.preco)}),
+      el('h3', {textContent:'Avaliações'}),
+      el('p', {className:'nota', textContent: notaTexto(av.total ? {media: av.media, total: av.total} : null)}),
+      ...lista, formAvaliar(id),
       el('div', {className:'row'}, el('button', {className:'btn', type:'button', textContent:'Fechar', onclick: () => d.close()})));
-    d.showModal();
+    if (!d.open) d.showModal();
   } catch (e) { $('#estado').textContent = e.message; }
 }
 
-function desenharConta(cliente) {
+function desenharConta(c) {
+  cliente = c;
   const box = $('#conta');
   if (!cliente) {
     box.replaceChildren(el('button', {className:'btn primary', textContent:'Entrar ou criar conta', onclick: () => abrirAuth('entrar')}));
@@ -211,6 +255,7 @@ $('#tipo').onchange = desenharGrid;
   if (token) { try { desenharConta((await api('/api/auth/perfil')).cliente); } catch { token = null; sessionStorage.removeItem('token'); } }
   try {
     jogos = await api('/api/jogos');
+    try { resumo = await api('/api/avaliacoes/resumo'); } catch { resumo = {}; }
     desenharChips(); desenharGrid();
   } catch (e) { $('#estado').textContent = 'Não foi possível carregar os jogos. Confira se o servidor está rodando.'; }
 })();
