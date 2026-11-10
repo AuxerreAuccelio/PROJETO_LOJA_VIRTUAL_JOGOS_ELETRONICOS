@@ -278,6 +278,8 @@ TOKEN=$(curl -s -X POST http://localhost:3000/api/auth/login \
   -H "Content-Type: application/json" \
   -d '{"email": "ana@teste.com", "senha": "senha12345"}' | node -pe "JSON.parse(require('fs').readFileSync(0,'utf8')).token")
 
+echo $TOKEN
+
 
 401 sem token
 curl -i -X POST http://localhost:3000/api/jogos/1/avaliacoes \
@@ -394,6 +396,25 @@ curl -i -X POST http://localhost:3000/api/pedidos -H "Authorization: Bearer $TOK
 
 # F: consultar o pedido criado (200). Troque 1 pelo id_pedido do teste E
 curl -s http://localhost:3000/api/pedidos/1 -H "Authorization: Bearer $TOKEN"
+
+
+
+
+
+
+
+
+
+TOKEN=$(curl -s -X POST http://localhost:3000/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email": "ana@teste.com", "senha": "senha12345"}' | node -pe "JSON.parse(require('fs').readFileSync(0,'utf8')).token")
+
+echo $TOKEN
+
+curl -i -X POST http://localhost:3000/api/pedidos/3/pagar -H "Authorization: Bearer $TOKEN"
+
+
+curl -i -X POST http://localhost:3000/api/pedidos/3/confirmar -H "Authorization: Bearer $TOKEN"
 
 
 

@@ -7,7 +7,8 @@ e o buscar só devolve pedidos do próprio cliente (outro cliente recebe 404).
 const db = require('../config/database');
 const ErroNegocio = require('../utils/ErroNegocio');
 const { pedidoSchema } = require('../validations/pedidoSchema');
-const { criarCliente, Preference } = require('../config/mercadopago');
+const { criarCliente, Preference, buscarPagamentos } = require('../config/mercadopago');
+const { escolherAprovado, registrarAprovado } = require('../services/pagamentos');
 
 const gravarPedido = db.transaction((id_cliente, itens) => {
   const buscar = db.prepare('SELECT id_jogo, nome, preco, estoque FROM JOGO WHERE id_jogo = ? AND ativo = 1');
@@ -60,7 +61,7 @@ const pedidosController = {
     res.json({ ...pedido, itens });
   },
 
-    pagar: async (req, res) => {
+  pagar: async (req, res) => {
     const pedido = db
       .prepare('SELECT * FROM PEDIDO WHERE id_pedido = ? AND id_cliente = ?')
       .get(req.params.id, req.cliente.id_cliente);
@@ -110,8 +111,54 @@ const pedidosController = {
       preference_id: resposta.id,
       init_point: resposta.init_point
     });
+  },
+
+  confirmar: async (req, res) => {
+    const pedido = db
+      .prepare('SELECT * FROM PEDIDO WHERE id_pedido = ? AND id_cliente = ?')
+      .get(req.params.id, req.cliente.id_cliente);
+    if (!pedido) throw new ErroNegocio(404, 'Pedido não encontrado');
+
+    if (pedido.status !== 'aguardando_pagamento') {
+      return res.json({ id_pedido: pedido.id_pedido, status: pedido.status, mensagem: 'Pedido já processado' });
+    }
+
+    let pagamentos;
+    try {
+      pagamentos = await buscarPagamentos(pedido.id_pedido);
+    } catch (err) {
+      console.error('Mercado Pago:', err.message || err);
+      throw new ErroNegocio(502, 'Não foi possível consultar o pagamento');
+    }
+
+    const aprovado = escolherAprovado(pedido, pagamentos);
+    if (!aprovado) {
+      if (pagamentos.some(p => p.status === 'approved')) {
+        console.warn(`Pedido ${pedido.id_pedido}: pagamento aprovado com valor ou moeda diferentes do pedido`);
+        throw new ErroNegocio(409, 'O valor do pagamento não confere com o pedido');
+      }
+      const ultimo = pagamentos[0];
+      return res.json({
+        id_pedido: pedido.id_pedido,
+        status: 'aguardando_pagamento',
+        pagamento_mp: ultimo ? ultimo.status : null,
+        mensagem: ultimo ? 'Pagamento ainda não aprovado' : 'Nenhum pagamento encontrado para este pedido'
+      });
+    }
+
+    const r = registrarAprovado(db, pedido.id_pedido, aprovado);
+    if (r.jaProcessado) {
+      return res.json({ id_pedido: pedido.id_pedido, status: 'pago', mensagem: 'Pedido já processado' });
+    }
+    r.avisos.forEach(a => console.warn(a));
+
+    res.json({
+      id_pedido: pedido.id_pedido,
+      status: 'pago',
+      forma_pagamento: r.forma,
+      codigos: r.codigos
+    });
   }
-  
 };
 
 module.exports = pedidosController;
