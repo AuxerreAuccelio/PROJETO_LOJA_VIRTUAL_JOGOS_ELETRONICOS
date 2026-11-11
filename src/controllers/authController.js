@@ -3,6 +3,9 @@ const jwt = require('jsonwebtoken');
 const db = require('../config/database');
 const { registroSchema, loginSchema } = require('../validations/authSchema');
 
+// Hash usado só para gastar o mesmo tempo quando o e-mail não existe
+const HASH_FALSO = bcrypt.hashSync('senha-inexistente', 10);
+
 // Esse é o OBJETO
 const authController = {
   registrar: (req, res) => {
@@ -68,6 +71,38 @@ const authController = {
       mensagem: 'Login realizado com sucesso!',
       token,
       cliente: { id_cliente: cliente.id_cliente, nome: cliente.nome, email: cliente.email }
+    });
+  },
+
+    loginAdmin: (req, res) => {
+    const resultado = loginSchema.safeParse(req.body);
+    if (!resultado.success) {
+      return res.status(400).json({
+        mensagem: 'Dados inválidos',
+        erros: resultado.error.issues.map(i => ({ campo: i.path.join('.'), problema: i.message }))
+      });
+    }
+
+    const { email, senha } = resultado.data;
+    const admin = db
+      .prepare('SELECT id_admin, nome, email, senha FROM ADMINISTRADOR WHERE email = ? AND ativo = 1')
+      .get(email);
+
+    const confere = bcrypt.compareSync(senha, admin ? admin.senha : HASH_FALSO);
+    if (!admin || !confere) {
+      return res.status(401).json({ mensagem: 'E-mail ou senha inválidos' });
+    }
+
+    const token = jwt.sign(
+      { id_admin: admin.id_admin, papel: 'admin' },
+      process.env.JWT_SECRET,
+      { expiresIn: process.env.JWT_EXPIRES_IN || '1h' }
+    );
+
+    res.json({
+      mensagem: 'Login de administrador realizado com sucesso!',
+      token,
+      admin: { id_admin: admin.id_admin, nome: admin.nome, email: admin.email }
     });
   }
 

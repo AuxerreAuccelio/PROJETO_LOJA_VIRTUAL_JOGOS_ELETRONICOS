@@ -3,6 +3,7 @@
 
 const db = require('../config/database');
 const { jogoSchema, jogoUpdateSchema } = require('../validations/jogoSchema');
+const jogoCriarSchema = jogoSchema.omit({ id_admin: true });
 
 const jogosController = {
   // 1. Listar todos os jogos ativos
@@ -32,7 +33,7 @@ const jogosController = {
   // 3. Cadastrar um novo jogo
   criar: (req, res) => {
     
-          const resultado = jogoSchema.safeParse(req.body);
+          const resultado = jogoCriarSchema.safeParse(req.body);
 
     if (!resultado.success) {
       return res.status(400).json({
@@ -42,9 +43,11 @@ const jogosController = {
     }
 
     const {
-      id_admin, nome, plataforma, genero, preco, tipo, estoque,
+      nome, plataforma, genero, preco, tipo, estoque,
       desenvolvedora, descricao, requisitos_sistema, data_lancamento
     } = resultado.data;
+
+    const id_admin = req.admin.id_admin;
 
       const stmt = db.prepare(`
         INSERT INTO JOGO (

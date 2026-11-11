@@ -23,4 +23,6 @@ const jogoSchema = jogoBase.extend({
 
 const jogoUpdateSchema = jogoBase.omit({ id_admin: true }).partial();
 
-module.exports = { jogoSchema, jogoUpdateSchema };
+const jogoCriarSchema = jogoSchema.omit({ id_admin: true });
+
+module.exports = { jogoSchema, jogoCriarSchema, jogoUpdateSchema };

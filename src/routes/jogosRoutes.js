@@ -19,6 +19,8 @@ const autenticar = require('../middlewares/autenticar');
 
 const avaliacoesController = require('../controllers/avaliacoesController');
 
+const exigirAdmin = require('../middlewares/exigirAdmin');
+
 
 
 // Mapeamento RESTful - 2. Mapeamento RESTful de Endpoints 
@@ -32,16 +34,22 @@ router.get('/:id', validarId, jogosController.buscarPorId); // http://localhost:
                                                             // O :id é um parâmetro de rota dinâmico. O Express entende que qualquer valor passado após a barra (ex: /1, /42) é o 
                                                             // parâmetro id, que é enviado para a função buscarPorId do controlador.
 
-router.post('/', jogosController.criar);  // http://localhost:3000/api/jogos
+router.post('/', exigirAdmin, jogosController.criar);                                                            
+//router.post('/', jogosController.criar);  // http://localhost:3000/api/jogos
                                         // Usado para cadastrar/inserir um novo jogo no banco. Os dados do jogo são enviados no corpo da requisição (Request Body em formato JSON) 
                                         // e processados pela função criar.
 
 
-router.put('/:id', validarId, jogosController.atualizar);   // http://localhost:3000/api/jogos/1
+
+router.put('/:id', exigirAdmin, validarId, jogosController.atualizar);                                        
+//router.put('/:id', validarId, jogosController.atualizar);   // http://localhost:3000/api/jogos/1
                                                             // Usado para atualizar os dados de um jogo existente especificando o :id na URL e enviando as novas informações 
                                                             // no corpo do JSON para a função atualizar.
 
-router.delete('/:id', validarId, jogosController.deletar);  // http://localhost:3000/api/jogos/1
+
+
+router.delete('/:id', exigirAdmin, validarId, jogosController.deletar);                                                            
+//router.delete('/:id', validarId, jogosController.deletar);  // http://localhost:3000/api/jogos/1
                                                             // Usado para desativar ou deletar o jogo do banco correspondente ao :id informado na URL, executando a função deletar.
 
 router.post('/:id/avaliacoes', autenticar, validarId, avaliacoesController.criar);

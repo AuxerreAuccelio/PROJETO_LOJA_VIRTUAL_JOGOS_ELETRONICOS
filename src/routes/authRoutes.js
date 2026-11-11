@@ -13,4 +13,6 @@ router.get('/perfil', autenticar, (req, res) => {
   res.json({ cliente: req.cliente });
 });
 
+router.post('/admin/login', authController.loginAdmin);
+
 module.exports = router;

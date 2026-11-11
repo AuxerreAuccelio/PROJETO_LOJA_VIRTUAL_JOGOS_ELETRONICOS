@@ -17,6 +17,10 @@ function autenticar(req, res, next) {
     return res.status(401).json({ mensagem });
   }
 
+    if (!payload.id_cliente) {
+    return res.status(401).json({ mensagem: 'Token inválido' });
+  }
+
   // Garante que o cliente ainda existe e está ativo
   const cliente = db
     .prepare('SELECT id_cliente, nome, email FROM CLIENTE WHERE id_cliente = ? AND ativo = 1')

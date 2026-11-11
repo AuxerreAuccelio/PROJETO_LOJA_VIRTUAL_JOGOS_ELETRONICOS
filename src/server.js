@@ -419,4 +419,12 @@ curl -i -X POST http://localhost:3000/api/pedidos/3/confirmar -H "Authorization:
 
 
 
+
+
+
+ADMIN=$(curl -s -X POST http://localhost:3000/api/auth/admin/login -H "Content-Type: application/json" -d '{"email":"admin@lojadegames.com","senha":"Admin12345"}' | node -pe "JSON.parse(require('fs').readFileSync(0,'utf8')).token" | tr -d '\r\n ')
+TOKEN=$(curl -s -X POST http://localhost:3000/api/auth/login -H "Content-Type: application/json" -d '{"email":"ana@teste.com","senha":"senha12345"}' | node -pe "JSON.parse(require('fs').readFileSync(0,'utf8')).token" | tr -d '\r\n ')
+echo ${#ADMIN} ${#TOKEN}
+
+
 */
