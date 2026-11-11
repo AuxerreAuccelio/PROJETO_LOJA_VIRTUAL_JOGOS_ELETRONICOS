@@ -1,6 +1,5 @@
 const ErroNegocio = require('../utils/ErroNegocio');
 
-
 // Rota que não existe
 function rotaNaoEncontrada(req, res) {
   res.status(404).json({ mensagem: 'Rota não encontrada' });
@@ -8,15 +7,18 @@ function rotaNaoEncontrada(req, res) {
 
 // Tratador global de erros (precisa ter 4 parâmetros)
 function tratadorDeErros(err, req, res, next) {
-
   if (err instanceof ErroNegocio) {
     return res.status(err.status).json({ mensagem: err.message });
   }
 
-
   // JSON malformado no corpo da requisição
   if (err.type === 'entity.parse.failed') {
     return res.status(400).json({ mensagem: 'JSON inválido no corpo da requisição' });
+  }
+
+  // Corpo maior que o limite
+  if (err.type === 'entity.too.large') {
+    return res.status(413).json({ mensagem: 'Corpo da requisição grande demais' });
   }
 
   // Violação de índice único (jogo duplicado)
@@ -26,9 +28,9 @@ function tratadorDeErros(err, req, res, next) {
     });
   }
 
-  // Violação de chave estrangeira (ex.: id_admin inexistente)
+  // Violação de chave estrangeira
   if (err.code === 'SQLITE_CONSTRAINT_FOREIGNKEY') {
-    return res.status(400).json({ mensagem: 'Referência inválida (verifique id_admin)' });
+    return res.status(400).json({ mensagem: 'Referência inválida' });
   }
 
   // Avaliação duplicada no MongoDB (índice único)
