@@ -1,3 +1,5 @@
+/*
+
 // 1. Conexão do Banco de Dados: src/config/database.js
 // Será responsável por centralizar a conexão com o loja.db:
 
@@ -36,3 +38,25 @@ db.pragma('foreign_keys = ON');
 module.exports = db;    // 4. Exportação do Módulo - Torna a instância de conexão db acessível para outros arquivos da aplicação.
                         // Assim, quando seus controllers precisarem fazer consultas SQL, basta importar essa mesma conexão usando 
                         // const db = require('../config/database');, garantindo que toda a aplicação reaproveite um único ponto de acesso ao banco (comando em outro arquivo).
+
+
+*/
+
+
+
+
+
+const Database = require('better-sqlite3');
+const path = require('path');
+
+// DB_PATH=:memory: cria um banco só na memória (usado nos testes automatizados)
+const destino = process.env.DB_PATH || 'loja.db';
+const dbPath = destino === ':memory:' ? ':memory:' : path.resolve(__dirname, '..', '..', destino);
+
+const db = new Database(dbPath, {
+  verbose: process.env.NODE_ENV === 'development' ? console.log : undefined
+});
+
+db.pragma('foreign_keys = ON');
+
+module.exports = db;
