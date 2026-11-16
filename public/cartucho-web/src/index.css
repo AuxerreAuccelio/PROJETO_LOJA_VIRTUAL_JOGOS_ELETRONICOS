@@ -1,0 +1,41 @@
+@import "tailwindcss";
+
+/* Identidade "Cartucho": cada cor tem uma função (ver Identidade_Visual_Cartucho.pdf).
+   As variáveis mudam no modo escuro; o tema Tailwind só aponta para elas. */
+:root {
+  --bg: #f5f7fc;      /* branco-gelo: fundo da página */
+  --surface: #ffffff; /* cards e janelas */
+  --ink: #14183b;     /* azul-noite: texto e títulos */
+  --muted: #5d6385;
+  --line: #dfe3f2;
+  --brand: #3d4bff;   /* cobalto: marca e ação */
+  --brand-ink: #ffffff;
+  --ok: #0b7a53;      /* estoque disponível */
+  --warn: #b4530a;    /* últimas unidades, sem estoque e erros */
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #0f1230; --surface: #181c45; --ink: #eef0ff; --muted: #a3a9d6;
+    --line: #2b3070; --brand: #7d89ff; --brand-ink: #0f1230; --ok: #4fd6a0; --warn: #f0a35e;
+  }
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-ink: var(--ink);
+  --color-muted: var(--muted);
+  --color-line: var(--line);
+  --color-brand: var(--brand);
+  --color-brand-ink: var(--brand-ink);
+  --color-ok: var(--ok);
+  --color-warn: var(--warn);
+  --font-display: "Bricolage Grotesque", system-ui, sans-serif;
+  --font-sans: "Instrument Sans", system-ui, sans-serif;
+}
+
+@layer base {
+  body { @apply bg-bg text-ink font-sans; }
+  :focus-visible { outline: 3px solid var(--brand); outline-offset: 2px; }
+  dialog::backdrop { background: rgb(10 12 40 / .55); }
+}
