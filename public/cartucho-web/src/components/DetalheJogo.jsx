@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import Modal from './Modal.jsx';
 import { api, post } from '../api.js';
 import { useAuth } from '../AuthContext.jsx';
+import { useCarrinho } from '../CarrinhoContext.jsx';
 import { brl, notaTexto } from '../utils.js';
 
 function FormAvaliar({ idJogo, aoEnviar }) {
@@ -39,6 +40,7 @@ function FormAvaliar({ idJogo, aoEnviar }) {
 
 export default function DetalheJogo({ idJogo, onFechar, aoAvaliar }) {
   const { cliente } = useAuth();
+  const { adicionar } = useCarrinho();
   const [dados, setDados] = useState(null);
   const [erro, setErro] = useState('');
 
@@ -82,7 +84,11 @@ export default function DetalheJogo({ idJogo, onFechar, aoAvaliar }) {
             ? <FormAvaliar idJogo={idJogo} aoEnviar={() => { carregar(); aoAvaliar(); }} />
             : <p className="text-sm text-muted">Entre na sua conta para avaliar este jogo.</p>}
 
-          <div className="mt-4">
+          <div className="mt-4 flex flex-wrap gap-2">
+            <button type="button" disabled={j.estoque <= 0} onClick={() => { adicionar(j); onFechar(); }}
+              className="rounded-[10px] border-[1.5px] border-brand bg-brand px-4 py-2 font-semibold text-brand-ink disabled:opacity-50">
+              {j.estoque > 0 ? 'Adicionar ao carrinho' : 'Sem estoque'}
+            </button>
             <button type="button" onClick={onFechar} className="rounded-[10px] border-[1.5px] border-ink px-4 py-2 font-semibold">Fechar</button>
           </div>
         </>

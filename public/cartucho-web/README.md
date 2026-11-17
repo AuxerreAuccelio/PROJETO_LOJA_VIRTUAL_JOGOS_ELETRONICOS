@@ -18,5 +18,11 @@ O helmet já permite scripts da própria origem e as fontes do Google Fonts, ent
 ## Já cobre (paridade com o protótipo)
 Vitrine com busca e filtros, detalhe, avaliações, login e cadastro com LGPD, modo escuro.
 
+## Checkout (novo)
+Carrinho no navegador (localStorage) > `POST /api/pedidos` > `POST /api/pedidos/:id/pagar` > Mercado Pago > retorno em `/?pedido=ID&pagamento=...` > `POST /api/pedidos/:id/confirmar`, que mostra o resultado e os códigos dos jogos digitais.
+
+### Testar o pagamento
+O backend exige `BASE_URL_PUBLICA` em https, e o sessionStorage é separado por endereço. Por isso, abra o front **pelo endereço do túnel https desde o início** (login incluído), e use esse mesmo endereço em `BASE_URL_PUBLICA`. Use credenciais e compradores de teste do Mercado Pago.
+
 ## Próximos passos da Fase 7
-Carrinho, checkout com o Mercado Pago (`/pagar`, retorno `/?pedido=ID&pagamento=...` e `/confirmar`) e "meus pedidos".
+"Meus pedidos" (precisa de um endpoint de listagem no backend).
